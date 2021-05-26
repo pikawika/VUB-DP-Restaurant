@@ -25,7 +25,13 @@
 - Make sure SWI Prolog is installed with the path variable set
 - Go to the root of this GitHub repository in your terminal
 - use:  ```swipl -s Bontinck_Lennert_568702_VUB_Restaurant.pl```
-   
 ## Testing the created predicates
 
-TODO
+The created predicates were tested on an individual basis through the interpreter, making sure all returned answers are correct by backtracking as well (using ;).
+
+- SMS INBOX
+   - ```is_processed_sms_inbox(TestVariable) .```
+      - Succeeds when Test represents the pre-processed sms inbox provided by the assignment.
+      - Answer: ```TestVariable = [[table, for, 2, at, 20, :, 0, on|...], [please, can, we, have, a, table, for|...], [we, would, like, a, table, for|...], [can, i, book, a, table|...], [reserve, us, a, table|...], [9, people, on|...], [book, 6|...], [reservation|...]].```
+   - 
+
