@@ -30,8 +30,15 @@
 The created predicates were tested on an individual basis through the interpreter, making sure all returned answers are correct by backtracking as well (using ;).
 
 - SMS INBOX
-   - ```is_processed_sms_inbox(TestVariable) .```
-      - Succeeds when Test represents the pre-processed sms inbox provided by the assignment.
-      - Answer: ```TestVariable = [[table, for, 2, at, 20, :, 0, on|...], [please, can, we, have, a, table, for|...], [we, would, like, a, table, for|...], [can, i, book, a, table|...], [reserve, us, a, table|...], [9, people, on|...], [book, 6|...], [reservation|...]].```
-   - 
+   - ```is_processed_sms_inbox```
+      - Succeeds when the argument represents the pre-processed sms inbox provided by the assignment.
+      - Test query: ```is_processed_sms_inbox(Inbox) .```
+      - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on|...], [please, can, we, have, a, table, for|...], [we, would, like, a, table, for|...], [can, i, book, a, table|...], [reserve, us, a, table|...], [9, people, on|...], [book, 6|...], [reservation|...]].```
+- NLP SYSTEM
+   - ```month``` (DCG)
+      - Test query: ```month( ExtractedMonth, [march], [] ) .```
+      - Answer: ```ExtractedMonth = 3.```
+   - ```reservation_request``` (DCG)
+      - Test query: ```reservation_request( ExtractedValues, [table,for,2,at,20,':',00,on,18,march], []) .```
+      - Answer: ```ExtractedValues = [[18, 3], [20, 0], 2, either].```
 
