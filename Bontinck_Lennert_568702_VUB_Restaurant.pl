@@ -3,26 +3,26 @@
 The GitHub repository for this project is available at: https://github.com/pikawika/VUB-DP-Restaurant.
     It will be made public once the deadline of the assignment has passed to ensure it isn't fraudulently used by colleague students.
 
-The created predicates were tested on an individual basis through the interpreter, making sure all returned answers are correct by backtracking as well (using ;).
-	The README.md files contains these test queries used in the interpreter. The readme is best read through a markdown editor or directly on Github
-	but a copy of the README file is provided as a huge comment at the bottom of this file.
+The created predicates were tested on an individual basis through the interpreter.
+    The README.md file contains these test queries used in the interpreter.
+    The readme is best read through a markdown editor or directly on Github but a copy of the README file is provided as a huge comment at the bottom of this file.
 
 Some things were assumed:
    - Since the text messages are said to be processed no operations such as downcase_atom (lowercase transformation) are done.
    - Since we could make the NLP portion endlessly big, it is made so that only the examples and very minor extra's are accepted.
-      - These extra's are tested via is_test_processed_sms_inbox.
+      - These extra's are tested via is_extra_processed_sms_inbox.
    - Since I'm no expert in linguistics the naming for different parts of sentences might be odd.
-      - It is also possible to make weird sentences such as "book i can a table for 2" due to the division in verb.
+      - It is also possible to make weird sentences such as "book I can a table for 2" due to both being just labelled verb.
    - No constraint needed for "Booking takes place at least a day before" (confirmed by Homer).
-   - "preferably for the standard menu at 7 oclock"
-      - oclock is pm since restaurant is not open in the morning.
-	  - "preferable" is in relation with the standard menu, not the time since it is situated before the menu. 
+   - For the following sentence: "preferably for the standard menu at 7 o'clock"
+      - 7 o'clock is 7 pm since the restaurant is not open in the morning.
+      - "preferable" is concerning the standard menu, not the time since it is situated before the menu. Thus menu also has the option to be "preferred".
 
 KNOWN BUGS:
    - none :)
 
 STUDENT INFO:
-	- Name: Bontinck Lennert
+    - Name: Bontinck Lennert
     - StudentID: 568702
     - Affiliation: VUB - Master Computer Science: AI 
 */
@@ -33,8 +33,8 @@ STUDENT INFO:
 ##################################################################
 
 The following code will import the required libraries:
-		- lists: used since it's seen as the default library for basic lists operation. 
-			The used documententation can be found here: https://www.swi-prolog.org/pldoc/man?section=lists.
+        - lists: used since it's seen as the default library for basic lists operation. 
+            The used documentation can be found here: https://www.swi-prolog.org/pldoc/man?section=lists.
 */
 
 :- use_module( [library(lists)] ).
@@ -44,7 +44,7 @@ The following code will import the required libraries:
 #                            SMS INBOX                           #
 ##################################################################
 
-The following code provides the SMS inbox so that it can be easily used for testing purposes.
+The following code provides the pre-processed SMS inbox so that it can be easily used for testing purposes.
 */
 
 /* Succeeds when its argument represents the pre-processed sms inbox provided by the assignment. */
@@ -57,7 +57,8 @@ is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 						[book,6,of,us,in,on,18,march,at,20,':',00],
 						[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) .
 
-is_test_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,march],
+/* Succeeds when its argument represents the extra pre-processed sms inbox provided by myself to demonstrate generality. */
+is_extra_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,march],
 								[hi,can,i,book,a,place,for,2, persons,on,the,first,of,march]] ) .
 
 
@@ -70,15 +71,15 @@ The following code implements the Definite Clause Grammars (DCGs).
 DCGs are a facility in Prolog which makes it easy to define languages according to grammar rules.
 DCGs will be used to link the following arguments with natural language sentences:
 	- Date: day of reservation - [Day, Month] - both integer
-	- Time: time of reservation - [Hour, Minute, Preference] - 2 integers and a constant being fixed, preferred or unspecified
+	- Time: time of reservation - [Hour, Minute, Preference] - Hour and Minute are integers or _ and Preference is a constant being fixed, preferred or unspecified
 	- Amount: number of people - integer
-	- Menu: chosen menu - standard, theatre or unspecified - constant
+	- Menu: chosen menu - [Menu, Preference] - Menu is the constant standard or theatre or _ and Preference is also a constant being fixed, preferred or unspecified
 */
 
 reservation_request( [Date, Time, Amount, Menu] ) --> sentence([Date, Time, Amount, Menu] ) . 
 
-/* The following sentences include all parts, alternatives where optional parst are left out are below.
-	The latter are hanled seperately to avoid multiple true answers for DCGs with optional values left out. */
+/* The following sentences include all parts, alternatives where optional parts are left out are below.
+    The alternatives are handled separately to avoid multiple true answers for DCGs with optional values left out. */
 sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 											amount_description(Amount),
 											time_description(Time),
@@ -115,7 +116,7 @@ sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 											ending_description .
 
 
-/* The following sentences include all parts except menu */
+/* The following sentences include all parts except menu description. */
 sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 											amount_description(Amount),
 											time_description(Time),
@@ -145,7 +146,7 @@ sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 											ending_description .
 
 
-/* The following sentences include all parts except time */
+/* The following sentences include all parts except time description. */
 sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 											amount_description(Amount),
 											date_description(Date),
@@ -167,7 +168,7 @@ sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 											no_time_description(Time),
 											ending_description .
 
-/* The following sentences include all parts except time and menu */
+/* The following sentences include all parts except time and menu description. */
 sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 											amount_description(Amount),
 											date_description(Date),
@@ -189,8 +190,10 @@ sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 ----------------------------------------------
 */
 
+/* Succeeds when the parameter is equal to the parsed positive integer. */
 positive_integer(X) --> [X], {integer(X), X > 0} .
 
+/* Succeeds when the parameter is equal to the parsed nonegative integer. */
 nonnegative_integer(X) --> [X], {integer(X), X >= 0} .
 
 /* 
@@ -199,7 +202,7 @@ nonnegative_integer(X) --> [X], {integer(X), X >= 0} .
 ----------------------------------------------
 */
 
-/* Succeeds when the parameter (Date = [Day, Month]) is equal to the parsed textual representation. */
+/* Succeeds when the parameter (Date = [Day, Month]) is equal to the parsed textual date description. */
 date_description([Day, Month]) --> [on], date([Day, Month]) .
 date_description([Day, Month]) --> [on, the], date([Day, Month]) .
 
@@ -214,8 +217,8 @@ date([Day, Month]) --> day(Day), [th, of], month(Month) .
 /* Succeeds when a correct day integer (1 - 31) is parsed and equal to its parameter. */
 day(Day) --> [Day], { integer(Day), Day >= 1, Day =< 31 } .
 
-/* Succeeds when parsed textual day (e.g. first) is equal to interger representation in parameter (e.g. 1).
-	Note: since no examples from the given message inbox had this only a couple are provided as proof-of-concept. */
+/* Succeeds when parsed textual day (e.g. first) is equal to the integer representation in the parameter (e.g. first as 1).
+	Note: since no examples from the given message inbox had this, only a couple are provided as proof-of-concept. */
 day(Day) --> [StringDay], { StringDay = first, Day = 1 } .
 day(Day) --> [StringDay], { StringDay = second, Day = 2 } .
 day(Day) --> [StringDay], { StringDay = third, Day = 3 } .
@@ -244,15 +247,15 @@ month(Month) --> [StringMonth], { StringMonth = december, Month = 12} .
 ----------------------------------------------
 */
 
-/* Succeeds when the parameter (Time = [Hour, Minute, Preference]) is equal to the parsed textual representation. */
+/* Succeeds when the parameter (Time = [Hour, Minute, Preference]) is equal to the parsed textual time description. */
 time_description([Hour, Minute, fixed]) --> [at], time([Hour, Minute]) .
 time_description([Hour, Minute, preferred]) --> [preferably, at], time([Hour, Minute])  .
 no_time_description([_, _, unspecified]) --> [] .
 
-/* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed 24 hour representation (e.g. 14:00). */
+/* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed 24 hour time representation (e.g. 14:00). */
 time([Hour, Minute]) --> hour(Hour), [':'], minute(Minute) .
 
-/* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed am/pm representation (e.g. 8 pm or 8 pm 30). */
+/* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed am/pm time representation (e.g. 8 pm or 8 pm 30). */
 time([Hour, Minute]) --> hour(Hour), [am], minute(Minute) .
 time([Hour, 0]) --> hour(Hour), [am] .
 
@@ -270,7 +273,7 @@ hour_pm(Hour) --> [RawHour], {integer(RawHour),
 								RawHour >= 1, RawHour =< 12,
 								Hour is RawHour + 12} .
 
-/* Succeeds when the paramater (Minute) is equal to textual represenatation) */
+/* Succeeds when the paramater (Minute) is equal to parsed textual represenatation. (e.g. 00) */
 minute(Minute) --> [Minute], {integer(Minute), Minute >= 0, Minute =< 60} .
 
 
@@ -280,7 +283,7 @@ minute(Minute) --> [Minute], {integer(Minute), Minute >= 0, Minute =< 60} .
 ----------------------------------------------
 */
 
-/* Succeeds when the parameter (Amount) is equal to the parsed textual representation. */
+/* Succeeds when the parameter (Amount) is equal to the parsed textual amount description. */
 amount_description(Amount) --> [for], amount(Amount) .
 amount_description(Amount) --> [for], amount(Amount), [people] .
 amount_description(Amount) --> [for], amount(Amount), [persons] .
@@ -294,7 +297,7 @@ amount_description(Amount) --> amount(Amount), [persons] .
 amount_description(Amount) --> amount(Amount), [person] .
 amount_description(Amount) --> [book], amount(Amount), [of, us, in] .
 
-/* Succeeds when the parameter (Amount) is equal to the parsed textual representation of a positive integer. */
+/* Succeeds when the parameter (Amount) is equal to the parsed textual representation of a positive integer representing the amount. */
 amount(Amount) --> positive_integer(Amount) .
 
 
@@ -304,7 +307,7 @@ amount(Amount) --> positive_integer(Amount) .
 ----------------------------------------------
 */
 
-/* Succeeds when the parameter (Menu) is equal to the parsed textual representation. */
+/* Succeeds when the parameter (Menu) is equal to the parsed textual menu description. */
 menu_description([Menu, fixed]) --> [for], article, menu(Menu), [menu] .
 menu_description([Menu, preferred]) --> [preferably, for], article, menu(Menu), [menu] .
 menu_description([Menu, fixed]) --> [for], menu(Menu), [menu] .
@@ -322,7 +325,7 @@ menu(Menu) --> [Menu], {Menu = standard} .
 ----------------------------------------------
 
 Since a message might contain a greeting and an ending, which don't contain any value, they can be handled pretty generally here.
-Some other more general sentence parts are taken care of here.
+Some other more general sentence parts are taken care of here as well.
 */
 
 /* Succeeds when parsed text represent an introduction for the reservation, can be empty (e.g. we would like a table). */
@@ -340,7 +343,7 @@ verb_description --> verb, pronoun, verb .
 verb_description --> pronoun, verb .
 verb_description --> verb, pronoun .
 
-/* Succeeds when parsed text represent a verb part of a sentce (e.g. a table). */
+/* Succeeds when parsed text represent a noun part of a sentce (e.g. a table). */
 noun_description --> article, noun .
 noun_description --> noun .
 

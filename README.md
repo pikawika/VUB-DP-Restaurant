@@ -39,12 +39,12 @@ The created code was tested whilst being developed through the interpreter, maki
 
 - SMS INBOX
    - ```is_processed_sms_inbox```
-      - Succeeds when the argument represents the pre-processed sms inbox provided by the assignment.
+      - Succeeds when the argument represents the pre-processed SMS inbox provided by the assignment.
          - Test query: ```is_processed_sms_inbox(Inbox) .```
          - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on|...], [please, can, we, have, a, table, for|...], [we, would, like, a, table, for|...], [can, i, book, a, table|...], [reserve, us, a, table|...], [9, people, on|...], [book, 6|...], [reservation|...]].```
 - NLP SYSTEM
    -  ```day``` (DCG)
-      - Succeeds when parsed textual day (e.g. first) is equal to interger representation in parameter (e.g. 1).
+      - Succeeds when parsed textual day (e.g. first) is equal to integer representation in parameter (e.g. 1).
          - Test query: ```day( ExtractedDay, [13], [] ) .```
          - Answer: ```ExtractedDay = 13 ;```
    
@@ -71,3 +71,4 @@ The created code was tested whilst being developed through the interpreter, maki
          - Answer: ```Result = [[18, 3], [20, 0, fixed], 6, [_19304, unspecified]]```
       - Test query: ```test_dcg_sample_8( Result )```
          - Answer: ```Result = [[18, 3], [19, 0, fixed], 7, [standard, preferred]] ;```
+      - ... 
