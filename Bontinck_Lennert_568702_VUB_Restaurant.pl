@@ -19,7 +19,7 @@ Some things were assumed:
 	  - "preferable" is in relation with the standard menu, not the time since it is situated before the menu. 
 
 KNOWN BUGS:
-   - sample 7 & 8 not working
+   - none :)
 
 STUDENT INFO:
 	- Name: Bontinck Lennert
@@ -58,7 +58,7 @@ is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 						[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) .
 
 is_test_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,march],
-								[table,for,2,on,the,first,of,march]] ) .
+								[hi,can,i,book,a,place,for,2, persons,on,the,first,of,march]] ) .
 
 
 /* 
@@ -105,6 +105,13 @@ sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 											time_description(Time),
 											amount_description(Amount),
 											menu_description(Menu),
+											ending_description .
+
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											amount_description(Amount),
+											date_description(Date),
+											menu_description(Menu),
+											time_description(Time),
 											ending_description .
 
 
@@ -252,6 +259,11 @@ time([Hour, 0]) --> hour(Hour), [am] .
 time([Hour, Minute]) --> hour_pm(Hour), [pm], minute(Minute) .
 time([Hour, 0]) --> hour_pm(Hour), [pm] .
 
+/* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed oclock representation (e.g. 7 oclock).
+	NOTE: assumption is made that oclock is in the pm notation as this is the only time the restaurant is open. */
+time([Hour, Minute]) --> hour_pm(Hour), [oclock], minute(Minute) .
+time([Hour, 0]) --> hour_pm(Hour), [oclock] .
+
 /* Succeeds when the paramater (Hour) is equal to textual represenatation) */
 hour(Hour) --> [Hour], {integer(Hour), Hour > 0, Hour =< 23} .
 hour_pm(Hour) --> [RawHour], {integer(RawHour),
@@ -261,10 +273,6 @@ hour_pm(Hour) --> [RawHour], {integer(RawHour),
 /* Succeeds when the paramater (Minute) is equal to textual represenatation) */
 minute(Minute) --> [Minute], {integer(Minute), Minute >= 0, Minute =< 60} .
 
-
-
-
- 
 
 /* 
 ----------------------------------------------
@@ -284,6 +292,7 @@ amount_description(Amount) --> [for, a, party, of], amount(Amount), [person] .
 amount_description(Amount) --> amount(Amount), [people] .
 amount_description(Amount) --> amount(Amount), [persons] .
 amount_description(Amount) --> amount(Amount), [person] .
+amount_description(Amount) --> [book], amount(Amount), [of, us, in] .
 
 /* Succeeds when the parameter (Amount) is equal to the parsed textual representation of a positive integer. */
 amount(Amount) --> positive_integer(Amount) .
@@ -296,8 +305,10 @@ amount(Amount) --> positive_integer(Amount) .
 */
 
 /* Succeeds when the parameter (Menu) is equal to the parsed textual representation. */
-menu_description([Menu, fixed]) --> [for, the], menu(Menu), [menu] .
-menu_description([Menu, preferred]) --> [preferably, for, the], menu(Menu), [menu] .
+menu_description([Menu, fixed]) --> [for], article, menu(Menu), [menu] .
+menu_description([Menu, preferred]) --> [preferably, for], article, menu(Menu), [menu] .
+menu_description([Menu, fixed]) --> [for], menu(Menu), [menu] .
+menu_description([Menu, preferred]) --> [preferably, for], menu(Menu), [menu] .
 no_menu_description([_, unspecified]) --> [] .
 
 /* Succeeds when the parameter (Menu) is equal to the textual representation of an allowed menu.
@@ -307,10 +318,11 @@ menu(Menu) --> [Menu], {Menu = standard} .
 
 /* 
 ----------------------------------------------
-|    NLP SYSTEM: INTRODUCTION AND ENDING     |
+|     NLP SYSTEM: OTHER SENTENCE PARTS       |
 ----------------------------------------------
 
-Since a message might contain a greeting and an ending, which don't contain any value, they can be handled pretty easy. 
+Since a message might contain a greeting and an ending, which don't contain any value, they can be handled pretty generally here.
+Some other more general sentence parts are taken care of here.
 */
 
 /* Succeeds when parsed text represent an introduction for the reservation, can be empty (e.g. we would like a table). */
@@ -368,12 +380,9 @@ noun --> [spot] .
 noun --> [reservation] .
 
 
-
-
-
 /* 
 ##################################################################
-#                             TESTING                            #
+#                        TESTING NLP SYSTEM                      #
 ##################################################################
 
 The code below is made available for easy testing.
@@ -387,3 +396,17 @@ test_dcg_sample_5( Result ) :- reservation_request( Result, [reserve,us,a,table,
 test_dcg_sample_6( Result ) :- reservation_request( Result, [9,people,on,18,th,of,march], []) .
 test_dcg_sample_7( Result ) :- reservation_request( Result, [book,6,of,us,in,on,18,march,at,20,':',00], []) .
 test_dcg_sample_8( Result ) :- reservation_request( Result, [reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock], []) .
+
+test_dcg_sample_extra_1(Result ) :- reservation_request( Result, [table,for,2,at,20,':',00,on,the,first,of,april], []) .
+test_dcg_sample_extra_2(Result ) :- reservation_request( Result, [hi,can,i,book,a,place,for,2,persons,on,the,23,th,of,december], []) .
+
+test_dcg_sample_all() :- test_dcg_sample_1( _ ),
+   							test_dcg_sample_2( _ ),
+   							test_dcg_sample_3( _ ),
+   							test_dcg_sample_4( _ ),
+   							test_dcg_sample_5( _ ),
+   							test_dcg_sample_6( _ ),
+   							test_dcg_sample_7( _ ),
+   							test_dcg_sample_8( _ ),
+   							test_dcg_sample_extra_1( _ ),
+   							test_dcg_sample_extra_2( _ ) .

@@ -55,6 +55,19 @@ The created code was tested whilst being developed through the interpreter, maki
   
    - ```reservation_request``` (DCG)
       - To test these an easy 1 liner is made
-      - Test query: ```test_dcg_sample_1( Result )``` (or 2, 3 ...)
-      - Answer: ```Result = [[18, 3], [20, 0, fixed], 2, [_3914, unspecified]]``` (Date, Time, Amount, Menu)
-
+      - Test query: ```test_dcg_sample_1( Result )```
+         - Answer: ```Result = [[18, 3], [20, 0, fixed], 2, [_8516, unspecified]]```
+      - Test query: ```test_dcg_sample_2( Result )```
+         - Answer: ```Result = [[18, 3], [_10052, _10058, unspecified], 3, [theatre, fixed]]```
+      - Test query: ```test_dcg_sample_3( Result )```
+         - Answer: ```Result = [[18, 3], [20, 0, preferred], 5, [_11612, unspecified]]```
+      - Test query: ```test_dcg_sample_4( Result )```
+         - Answer: ```Result = [[18, 3], [21, 0, fixed], 2, [standard, fixed]]```
+      - Test query: ```test_dcg_sample_5( Result )```
+         - Answer: ```Result = [[18, 3], [_14744, _14750, unspecified], 4, [standard, fixed]] ;```
+      - Test query: ```test_dcg_sample_6( Result )```
+         - Answer: ```Result = [[18, 3], [_17768, _17774, unspecified], 9, [_17756, unspecified]]```
+      - Test query: ```test_dcg_sample_7( Result )```
+         - Answer: ```Result = [[18, 3], [20, 0, fixed], 6, [_19304, unspecified]]```
+      - Test query: ```test_dcg_sample_8( Result )```
+         - Answer: ```Result = [[18, 3], [19, 0, fixed], 7, [standard, preferred]] ;```
