@@ -73,6 +73,12 @@ reservation_request( [Date, Time, Amount, Menu] ) --> random_text,
 														date_description(Date),
 														time_description(Time) .
 
+reservation_request( [Date, Time, Amount, Menu] ) --> random_text,
+														time_description(Time),
+														amount_description(Amount),
+														date_description(Date),
+														menu_description(Menu) .
+
 
 
 /* 
@@ -98,9 +104,9 @@ date_description([Day, Month]) --> [on, the], date([Day, Month]) .
 /* Succeeds when the parameter (Date = [Day, Month]) is equal to the parsed textual representation of a date (e.g. 23/12, 23 march, ...). */
 date([Day, Month]) --> day(Day), month(Month) .
 date([Day, Month]) --> day(Day), [of], month(Month) .
-date([Day, Month]) --> day(Day), month(Month), day(Day) .
 date([Day, Month]) --> month(Month), day(Day), [th] .
 date([Day, Month]) --> day(Day), ['/'], month(Month) .
+date([Day, Month]) --> day(Day), [th, of], month(Month) .
 
 /* Succeeds when a correct day integer (1 - 31) is parsed and equal to its parameter. */
 day(Day) --> [Day], { integer(Day), Day >= 1, Day =< 31 } .
@@ -185,7 +191,14 @@ minute(Minute) --> [Minute], {integer(Minute), Minute >= 0, Minute =< 60} .
 ----------------------------------------------
 */
 
-amount_description(Amount) --> [for], positive_integer(Amount).
+/* Succeeds when the parameter (Amount) is equal to the parsed textual representation. */
+amount_description(Amount) --> [for], amount(Amount) .
+amount_description(Amount) --> [for], amount(Amount), [people] .
+amount_description(Amount) --> [for], amount(Amount), [persons] .
+amount_description(Amount) --> [for], amount(Amount), [person] .
+
+/* Succeeds when the parameter (Amount) is equal to the parsed textual representation of a positive integer. */
+amount(Amount) --> positive_integer(Amount) .
 
 
 /* 
@@ -194,9 +207,14 @@ amount_description(Amount) --> [for], positive_integer(Amount).
 ----------------------------------------------
 */
 
+/* Succeeds when the parameter (Menu) is equal to the parsed textual representation. */
 menu_description(unspecified) --> [] .
-menu_description(theatre) --> [for, the, theatre, menu] .
-menu_description(standard) --> [for, the, standard, menu] .
+menu_description(Menu) --> [for, the], menu(Menu), [menu] .
+
+/* Succeeds when the parameter (Menu) is equal to the textual representation of an allowed menu.
+	This abstraction makes it easier to add more menus down the line. */
+menu(Menu) --> [Menu], {Menu = theatre} .
+menu(Menu) --> [Menu], {Menu = standard} .
 
 /* 
 ----------------------------------------------
