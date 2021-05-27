@@ -397,17 +397,17 @@ humans --> [of, us] .
 The code below is made available for easy testing.
 */
 
-test_dcg_sample_1( Result ) :- reservation_request( Result, [table,for,2,at,20,':',00,on,18,march], []) .
-test_dcg_sample_2( Result ) :- reservation_request( Result, [please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th], []) .
-test_dcg_sample_3( Result ) :- reservation_request( Result, [we,would,like,a,table,for,5,preferably,at,8,pm,on,18,'/',03], []) .
-test_dcg_sample_4( Result ) :- reservation_request( Result, [can,i,book,a,table,at,9,pm,for,2,people,on,the,18,th,of,march,for,the,standard,menu,please], []) .
-test_dcg_sample_5( Result ) :- reservation_request( Result, [reserve,us,a,table,on,march,18,for,a,party,of,4,for,the,standard,menu], []) .
-test_dcg_sample_6( Result ) :- reservation_request( Result, [9,people,on,18,th,of,march], []) .
-test_dcg_sample_7( Result ) :- reservation_request( Result, [book,6,of,us,in,on,18,march,at,20,':',00], []) .
-test_dcg_sample_8( Result ) :- reservation_request( Result, [reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock], []) .
+test_dcg_sample_1( Result ) :- is_processed_sms_inbox(List), nth1(1,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_2( Result ) :- is_processed_sms_inbox(List), nth1(2,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_3( Result ) :- is_processed_sms_inbox(List), nth1(3,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_4( Result ) :- is_processed_sms_inbox(List), nth1(4,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_5( Result ) :- is_processed_sms_inbox(List), nth1(5,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_6( Result ) :- is_processed_sms_inbox(List), nth1(6,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_7( Result ) :- is_processed_sms_inbox(List), nth1(7,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_8( Result ) :- is_processed_sms_inbox(List), nth1(8,List,Sample), reservation_request( Result, Sample, []) .
 
-test_dcg_sample_extra_1(Result ) :- reservation_request( Result, [table,for,2,at,20,':',00,on,the,first,of,april], []) .
-test_dcg_sample_extra_2(Result ) :- reservation_request( Result, [hi,can,i,book,a,place,for,2,persons,on,the,23,th,of,december], []) .
+test_dcg_sample_extra_1(Result ) :- is_extra_processed_sms_inbox(List), nth1(1,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_extra_2(Result ) :- is_extra_processed_sms_inbox(List), nth1(2,List,Sample), reservation_request( Result, Sample, []) .
 
 test_dcg_sample_all() :- test_dcg_sample_1( _ ),
    							test_dcg_sample_2( _ ),
