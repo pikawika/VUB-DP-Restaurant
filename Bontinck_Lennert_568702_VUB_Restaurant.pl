@@ -14,9 +14,11 @@ Some things were assumed:
    - Since I'm no expert in linguistics the naming for different parts of sentences might be odd.
       - It is also possible to make weird sentences such as "book i can a table for 2" due to the division in verb.
    - No constraint needed for "Booking takes place at least a day before" (confirmed by Homer).
+   - "preferably for the standard menu at 7 oclock"
+      - oclock is pm since restaurant is not open in the morning.
+	  - "preferable" is in relation with the standard menu, not the time since it is situated before the menu. 
 
 KNOWN BUGS:
-   - sample 6 matches with mutiple due to empty values
    - sample 7 & 8 not working
 
 STUDENT INFO:
@@ -75,6 +77,8 @@ DCGs will be used to link the following arguments with natural language sentence
 
 reservation_request( [Date, Time, Amount, Menu] ) --> sentence([Date, Time, Amount, Menu] ) . 
 
+/* The following sentences include all parts, alternatives where optional parst are left out are below.
+	The latter are hanled seperately to avoid multiple true answers for DCGs with optional values left out. */
 sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 											amount_description(Amount),
 											time_description(Time),
@@ -103,6 +107,73 @@ sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 											menu_description(Menu),
 											ending_description .
 
+
+/* The following sentences include all parts except menu */
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											amount_description(Amount),
+											time_description(Time),
+											date_description(Date),
+											no_menu_description(Menu),
+											ending_description .
+
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											amount_description(Amount),
+											date_description(Date),
+											time_description(Time),
+											no_menu_description(Menu),
+											ending_description .
+
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											time_description(Time),
+											amount_description(Amount),
+											date_description(Date),
+											no_menu_description(Menu),
+											ending_description .
+
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											date_description(Date),
+											time_description(Time),
+											amount_description(Amount),
+											no_menu_description(Menu),
+											ending_description .
+
+
+/* The following sentences include all parts except time */
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											amount_description(Amount),
+											date_description(Date),
+											menu_description(Menu),
+											no_time_description(Time),
+											ending_description .
+
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											amount_description(Amount),
+											menu_description(Menu),
+											date_description(Date),
+											no_time_description(Time),
+											ending_description .
+
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											date_description(Date),
+											amount_description(Amount),
+											menu_description(Menu),
+											no_time_description(Time),
+											ending_description .
+
+/* The following sentences include all parts except time and menu */
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											amount_description(Amount),
+											date_description(Date),
+											no_menu_description(Menu),
+											no_time_description(Time),
+											ending_description .
+
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											date_description(Date),
+											amount_description(Amount),
+											no_menu_description(Menu),
+											no_time_description(Time),
+											ending_description .
 
 
 /* 
@@ -169,7 +240,7 @@ month(Month) --> [StringMonth], { StringMonth = december, Month = 12} .
 /* Succeeds when the parameter (Time = [Hour, Minute, Preference]) is equal to the parsed textual representation. */
 time_description([Hour, Minute, fixed]) --> [at], time([Hour, Minute]) .
 time_description([Hour, Minute, preferred]) --> [preferably, at], time([Hour, Minute])  .
-time_description([_, _, unspecified]) --> [] .
+no_time_description([_, _, unspecified]) --> [] .
 
 /* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed 24 hour representation (e.g. 14:00). */
 time([Hour, Minute]) --> hour(Hour), [':'], minute(Minute) .
@@ -224,11 +295,10 @@ amount(Amount) --> positive_integer(Amount) .
 ----------------------------------------------
 */
 
-/* Succeeds when the parameter (Menu) is equal to the parsed textual representation.
-	If no menu is given, standard menu is preffered */
-menu_description([_, unspecified]) --> [] .
+/* Succeeds when the parameter (Menu) is equal to the parsed textual representation. */
 menu_description([Menu, fixed]) --> [for, the], menu(Menu), [menu] .
 menu_description([Menu, preferred]) --> [preferably, for, the], menu(Menu), [menu] .
+no_menu_description([_, unspecified]) --> [] .
 
 /* Succeeds when the parameter (Menu) is equal to the textual representation of an allowed menu.
 	This abstraction makes it easier to add more menus down the line. */
