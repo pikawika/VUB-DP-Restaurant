@@ -48,5 +48,7 @@ The created code was tested whilst being developed through the interpreter, maki
   
    - ```reservation_request``` (DCG)
       - Test query: ```reservation_request( ExtractedValues, [table,for,2,at,20,':',00,on,18,march], []) .```
-      - Answer: ```ExtractedValues = [[18, 3], [20, 0], 2, either].```
+      - Answer: ```ExtractedValues = [[18, 3], [20, 0, fixed], 2, unspecified]```
+      - Test query: ```reservation_request( ExtractedValues, [please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th], []) .```
+      - Answer: ```ExtractedValues = [[18, 3], [_4032, _4038, none], 3, theatre]```
 

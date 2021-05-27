@@ -62,12 +62,16 @@ DCGs will be used to link the following arguments with natural language sentence
 */
 
 reservation_request( [Date, Time, Amount, Menu] ) --> random_text,
-														amount(Amount),
-														time(Time),
-														date(Date),
-														menu(Menu) .
+														amount_description(Amount),
+														time_description(Time),
+														date_description(Date),
+														menu_description(Menu) .
 
-
+reservation_request( [Date, Time, Amount, Menu] ) --> random_text,
+														amount_description(Amount),
+														menu_description(Menu),
+														date_description(Date),
+														time_description(Time) .
 
 
 
@@ -87,11 +91,19 @@ nonnegative_integer(X) --> [X], {integer(X), X >= 0} .
 ----------------------------------------------
 */
 
-date([Day, Month]) --> [on], day(Day), month(Month) .
-date([Day, Month]) --> [on, the], day(Day), [of], month(Month) .
+/* Succeeds when the parameter (Date = [Day, Month]) is equal to the parsed textual representation. */
+date_description([Day, Month]) --> [on], date([Day, Month]) .
+date_description([Day, Month]) --> [on, the], date([Day, Month]) .
+
+/* Succeeds when the parameter (Date = [Day, Month]) is equal to the parsed textual representation of a date (e.g. 23/12, 23 march, ...). */
+date([Day, Month]) --> day(Day), month(Month) .
+date([Day, Month]) --> day(Day), [of], month(Month) .
+date([Day, Month]) --> day(Day), month(Month), day(Day) .
+date([Day, Month]) --> month(Month), day(Day), [th] .
+date([Day, Month]) --> day(Day), ['/'], month(Month) .
 
 /* Succeeds when a correct day integer (1 - 31) is parsed and equal to its parameter. */
-day(Day) --> [Day], { integer(Day), Day > 0, Day < 32 } .
+day(Day) --> [Day], { integer(Day), Day >= 1, Day =< 31 } .
 
 /* Succeeds when parsed textual day (e.g. first) is equal to interger representation in parameter (e.g. 1).
 	Note: since no examples from the given message inbox had this only a couple are provided as proof-of-concept. */
@@ -101,6 +113,9 @@ day(Day) --> [RawDay], { downcase_atom(RawDay, StringDay),
 							StringDay = second, Day = 2 } .
 day(Day) --> [RawDay], { downcase_atom(RawDay, StringDay),
 							StringDay = third, Day = 3 } .
+
+/* Succeeds when a correct month integer (1 - 12) is parsed and equal to its parameter. */
+month(Month) --> [Month], { integer(Month), Month >= 1, Month =< 12 } .
 
 /* Succeeds when parsed textual month (e.g. march) is equal to integer representation in parameter (e.g. 3) */
 month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
@@ -135,9 +150,34 @@ month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
 ----------------------------------------------
 */
 
-time([Hour, Minute, fixed]) --> [at], positive_integer(Hour), [':'],  nonnegative_integer(Minute) .
-time([Hour, Minute, preferred]) --> [preferably, at], positive_integer(Hour), [':'],  nonnegative_integer(Minute) .
-time([_, _, none]) --> [] .
+/* Succeeds when the parameter (Time = [Hour, Minute, Preference]) is equal to the parsed textual representation. */
+time_description([Hour, Minute, fixed]) --> [at], time([Hour, Minute]) .
+time_description([Hour, Minute, preferred]) --> [preferably, at], time([Hour, Minute])  .
+time_description([_, _, none]) --> [] .
+
+/* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed 24 hour representation (e.g. 14:00). */
+time([Hour, Minute]) --> hour(Hour), [':'], minute(Minute) .
+
+/* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed am/pm representation (e.g. 8 pm or 8 pm 30). */
+time([Hour, Minute]) --> hour(Hour), [am], minute(Minute) .
+time([Hour, 0]) --> hour(Hour), [am] .
+
+time([Hour, Minute]) --> hour_pm(Hour), [pm], minute(Minute) .
+time([Hour, 0]) --> hour_pm(Hour), [pm] .
+
+/* Succeeds when the paramater (Hour) is equal to textual represenatation) */
+hour(Hour) --> [Hour], {integer(Hour), Hour > 0, Hour =< 23} .
+hour_pm(Hour) --> [RawHour], {integer(RawHour),
+								RawHour >= 1, RawHour =< 12,
+								Hour is RawHour + 12} .
+
+/* Succeeds when the paramater (Minute) is equal to textual represenatation) */
+minute(Minute) --> [Minute], {integer(Minute), Minute >= 0, Minute =< 60} .
+
+
+
+
+ 
 
 /* 
 ----------------------------------------------
@@ -145,7 +185,7 @@ time([_, _, none]) --> [] .
 ----------------------------------------------
 */
 
-amount(Amount) --> [for], positive_integer(Amount).
+amount_description(Amount) --> [for], positive_integer(Amount).
 
 
 /* 
@@ -154,7 +194,9 @@ amount(Amount) --> [for], positive_integer(Amount).
 ----------------------------------------------
 */
 
-menu(unspecified) --> [] .
+menu_description(unspecified) --> [] .
+menu_description(theatre) --> [for, the, theatre, menu] .
+menu_description(standard) --> [for, the, standard, menu] .
 
 /* 
 ----------------------------------------------
