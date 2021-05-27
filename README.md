@@ -56,5 +56,5 @@ The created code was tested whilst being developed through the interpreter, maki
    - ```reservation_request``` (DCG)
       - To test these an easy 1 liner is made
       - Test query: ```test_dcg_sample_1( Result )``` (or 2, 3 ...)
-      - Answer: ```ExtractedValues = [[18, 3], [20, 0, fixed], 2, unspecified]```
+      - Answer: ```Result = [[18, 3], [20, 0, fixed], 2, [_3914, unspecified]]``` (Date, Time, Amount, Menu)
 

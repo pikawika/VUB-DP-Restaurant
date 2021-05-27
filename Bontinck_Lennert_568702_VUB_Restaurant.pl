@@ -15,6 +15,10 @@ Some things were assumed:
       - It is also possible to make weird sentences such as "book i can a table for 2" due to the division in verb.
    - No constraint needed for "Booking takes place at least a day before" (confirmed by Homer).
 
+KNOWN BUGS:
+   - sample 6 matches with mutiple due to empty values
+   - sample 7 & 8 not working
+
 STUDENT INFO:
 	- Name: Bontinck Lennert
     - StudentID: 568702
@@ -64,31 +68,40 @@ The following code implements the Definite Clause Grammars (DCGs).
 DCGs are a facility in Prolog which makes it easy to define languages according to grammar rules.
 DCGs will be used to link the following arguments with natural language sentences:
 	- Date: day of reservation - [Day, Month] - both integer
-	- Time: time of reservation - [Hour, Minute, Preference] - 2 integers and a constant being fixed, preferred or none
+	- Time: time of reservation - [Hour, Minute, Preference] - 2 integers and a constant being fixed, preferred or unspecified
 	- Amount: number of people - integer
 	- Menu: chosen menu - standard, theatre or unspecified - constant
 */
 
-reservation_request( [Date, Time, Amount, Menu] ) --> introduction_description,
-														amount_description(Amount),
-														time_description(Time),
-														date_description(Date),
-														menu_description(Menu),
-														ending_description .
+reservation_request( [Date, Time, Amount, Menu] ) --> sentence([Date, Time, Amount, Menu] ) . 
 
-reservation_request( [Date, Time, Amount, Menu] ) --> introduction_description,
-														amount_description(Amount),
-														menu_description(Menu),
-														date_description(Date),
-														time_description(Time),
-														ending_description .
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											amount_description(Amount),
+											time_description(Time),
+											date_description(Date),
+											menu_description(Menu),
+											ending_description .
 
-reservation_request( [Date, Time, Amount, Menu] ) --> introduction_description,
-														time_description(Time),
-														amount_description(Amount),
-														date_description(Date),
-														menu_description(Menu),
-														ending_description .
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											amount_description(Amount),
+											menu_description(Menu),
+											date_description(Date),
+											time_description(Time),
+											ending_description .
+
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											time_description(Time),
+											amount_description(Amount),
+											date_description(Date),
+											menu_description(Menu),
+											ending_description .
+
+sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+											date_description(Date),
+											time_description(Time),
+											amount_description(Amount),
+											menu_description(Menu),
+											ending_description .
 
 
 
@@ -114,6 +127,7 @@ date_description([Day, Month]) --> [on, the], date([Day, Month]) .
 
 /* Succeeds when the parameter (Date = [Day, Month]) is equal to the parsed textual representation of a date (e.g. 23/12, 23 march, ...). */
 date([Day, Month]) --> day(Day), month(Month) .
+date([Day, Month]) --> month(Month), day(Day) .
 date([Day, Month]) --> day(Day), [of], month(Month) .
 date([Day, Month]) --> month(Month), day(Day), [th] .
 date([Day, Month]) --> day(Day), ['/'], month(Month) .
@@ -155,7 +169,7 @@ month(Month) --> [StringMonth], { StringMonth = december, Month = 12} .
 /* Succeeds when the parameter (Time = [Hour, Minute, Preference]) is equal to the parsed textual representation. */
 time_description([Hour, Minute, fixed]) --> [at], time([Hour, Minute]) .
 time_description([Hour, Minute, preferred]) --> [preferably, at], time([Hour, Minute])  .
-time_description([_, _, none]) --> [] .
+time_description([_, _, unspecified]) --> [] .
 
 /* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed 24 hour representation (e.g. 14:00). */
 time([Hour, Minute]) --> hour(Hour), [':'], minute(Minute) .
@@ -192,6 +206,13 @@ amount_description(Amount) --> [for], amount(Amount) .
 amount_description(Amount) --> [for], amount(Amount), [people] .
 amount_description(Amount) --> [for], amount(Amount), [persons] .
 amount_description(Amount) --> [for], amount(Amount), [person] .
+amount_description(Amount) --> [for, a, party, of], amount(Amount).
+amount_description(Amount) --> [for, a, party, of], amount(Amount), [people] .
+amount_description(Amount) --> [for, a, party, of], amount(Amount), [persons] .
+amount_description(Amount) --> [for, a, party, of], amount(Amount), [person] .
+amount_description(Amount) --> amount(Amount), [people] .
+amount_description(Amount) --> amount(Amount), [persons] .
+amount_description(Amount) --> amount(Amount), [person] .
 
 /* Succeeds when the parameter (Amount) is equal to the parsed textual representation of a positive integer. */
 amount(Amount) --> positive_integer(Amount) .
@@ -203,9 +224,11 @@ amount(Amount) --> positive_integer(Amount) .
 ----------------------------------------------
 */
 
-/* Succeeds when the parameter (Menu) is equal to the parsed textual representation. */
-menu_description(unspecified) --> [] .
-menu_description(Menu) --> [for, the], menu(Menu), [menu] .
+/* Succeeds when the parameter (Menu) is equal to the parsed textual representation.
+	If no menu is given, standard menu is preffered */
+menu_description([_, unspecified]) --> [] .
+menu_description([Menu, fixed]) --> [for, the], menu(Menu), [menu] .
+menu_description([Menu, preferred]) --> [preferably, for, the], menu(Menu), [menu] .
 
 /* Succeeds when the parameter (Menu) is equal to the textual representation of an allowed menu.
 	This abstraction makes it easier to add more menus down the line. */
@@ -233,6 +256,7 @@ introduction_description --> noun_description .
 /* Succeeds when parsed text represent a verb part of a sentce (e.g. can we have). */
 verb_description --> verb, pronoun, verb .
 verb_description --> pronoun, verb .
+verb_description --> verb, pronoun .
 
 /* Succeeds when parsed text represent a verb part of a sentce (e.g. a table). */
 noun_description --> article, noun .
@@ -254,6 +278,7 @@ gratitude --> [thank, you] .
 /* Succeeds when parsed text represent a pronoun */
 pronoun --> [i] .
 pronoun --> [we] .
+pronoun --> [us] .
 
 /* Succeeds when parsed text represent a verb (e.g. can, would, like) */
 verb --> [can] .
@@ -270,6 +295,7 @@ article --> [the] .
 noun --> [table] .
 noun --> [place] .
 noun --> [spot] .
+noun --> [reservation] .
 
 
 
