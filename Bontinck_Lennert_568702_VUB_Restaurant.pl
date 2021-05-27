@@ -76,39 +76,39 @@ DCGs will be used to link the following arguments with natural language sentence
 	- Menu: chosen menu - [Menu, Preference] - Menu is the constant standard or theatre or _ and Preference is also a constant being fixed, preferred or unspecified
 */
 
-reservation_request( [Date, Time, Amount, Menu] ) --> sentence([Date, Time, Amount, Menu] ) . 
+reservation_request([Date, Time, Amount, Menu]) --> sentence([Date, Time, Amount, Menu] ) . 
 
 /* The following sentences include all parts, alternatives where optional parts are left out are below.
     The alternatives are handled separately to avoid multiple true answers for DCGs with optional values left out. */
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											amount_description(Amount),
 											time_description(Time),
 											date_description(Date),
 											menu_description(Menu),
 											ending_description .
 
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											amount_description(Amount),
 											menu_description(Menu),
 											date_description(Date),
 											time_description(Time),
 											ending_description .
 
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											time_description(Time),
 											amount_description(Amount),
 											date_description(Date),
 											menu_description(Menu),
 											ending_description .
 
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											date_description(Date),
 											time_description(Time),
 											amount_description(Amount),
 											menu_description(Menu),
 											ending_description .
 
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											amount_description(Amount),
 											date_description(Date),
 											menu_description(Menu),
@@ -117,28 +117,28 @@ sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 
 
 /* The following sentences include all parts except menu description. */
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											amount_description(Amount),
 											time_description(Time),
 											date_description(Date),
 											no_menu_description(Menu),
 											ending_description .
 
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											amount_description(Amount),
 											date_description(Date),
 											time_description(Time),
 											no_menu_description(Menu),
 											ending_description .
 
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											time_description(Time),
 											amount_description(Amount),
 											date_description(Date),
 											no_menu_description(Menu),
 											ending_description .
 
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											date_description(Date),
 											time_description(Time),
 											amount_description(Amount),
@@ -147,21 +147,21 @@ sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 
 
 /* The following sentences include all parts except time description. */
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											amount_description(Amount),
 											date_description(Date),
 											menu_description(Menu),
 											no_time_description(Time),
 											ending_description .
 
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											amount_description(Amount),
 											menu_description(Menu),
 											date_description(Date),
 											no_time_description(Time),
 											ending_description .
 
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											date_description(Date),
 											amount_description(Amount),
 											menu_description(Menu),
@@ -169,14 +169,14 @@ sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
 											ending_description .
 
 /* The following sentences include all parts except time and menu description. */
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											amount_description(Amount),
 											date_description(Date),
 											no_menu_description(Menu),
 											no_time_description(Time),
 											ending_description .
 
-sentence( [Date, Time, Amount, Menu] ) --> introduction_description,
+sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											date_description(Date),
 											amount_description(Amount),
 											no_menu_description(Menu),
@@ -397,17 +397,17 @@ humans --> [of, us] .
 The code below is made available for easy testing.
 */
 
-test_dcg_sample_1( Result ) :- is_processed_sms_inbox(List), nth1(1,List,Sample), reservation_request( Result, Sample, []) .
-test_dcg_sample_2( Result ) :- is_processed_sms_inbox(List), nth1(2,List,Sample), reservation_request( Result, Sample, []) .
-test_dcg_sample_3( Result ) :- is_processed_sms_inbox(List), nth1(3,List,Sample), reservation_request( Result, Sample, []) .
-test_dcg_sample_4( Result ) :- is_processed_sms_inbox(List), nth1(4,List,Sample), reservation_request( Result, Sample, []) .
-test_dcg_sample_5( Result ) :- is_processed_sms_inbox(List), nth1(5,List,Sample), reservation_request( Result, Sample, []) .
-test_dcg_sample_6( Result ) :- is_processed_sms_inbox(List), nth1(6,List,Sample), reservation_request( Result, Sample, []) .
-test_dcg_sample_7( Result ) :- is_processed_sms_inbox(List), nth1(7,List,Sample), reservation_request( Result, Sample, []) .
-test_dcg_sample_8( Result ) :- is_processed_sms_inbox(List), nth1(8,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_1(Result) :- is_processed_sms_inbox(List), nth1(1,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_2(Result) :- is_processed_sms_inbox(List), nth1(2,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_3(Result) :- is_processed_sms_inbox(List), nth1(3,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_4(Result) :- is_processed_sms_inbox(List), nth1(4,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_5(Result) :- is_processed_sms_inbox(List), nth1(5,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_6(Result) :- is_processed_sms_inbox(List), nth1(6,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_7(Result) :- is_processed_sms_inbox(List), nth1(7,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_8(Result) :- is_processed_sms_inbox(List), nth1(8,List,Sample), reservation_request( Result, Sample, []) .
 
-test_dcg_sample_extra_1(Result ) :- is_extra_processed_sms_inbox(List), nth1(1,List,Sample), reservation_request( Result, Sample, []) .
-test_dcg_sample_extra_2(Result ) :- is_extra_processed_sms_inbox(List), nth1(2,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_extra_1(Result) :- is_extra_processed_sms_inbox(List), nth1(1,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_extra_2(Result) :- is_extra_processed_sms_inbox(List), nth1(2,List,Sample), reservation_request( Result, Sample, []) .
 
 test_dcg_sample_all() :- test_dcg_sample_1( _ ),
    							test_dcg_sample_2( _ ),
