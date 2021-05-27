@@ -7,8 +7,16 @@ The created predicates were tested on an individual basis through the interprete
 	The README.md files contains these test queries used in the interpreter. The readme is best read through a markdown editor or directly on Github
 	but a copy of the README file is provided as a huge comment at the bottom of this file.
 
+Some things were assumed:
+   - Since the text messages are said to be processed no operations such as downcase_atom (lowercase transformation) are done.
+   - Since we could make the NLP portion endlessly big, it is made so that only the examples and very minor extra's are accepted.
+      - These extra's are tested via is_test_processed_sms_inbox.
+   - Since I'm no expert in linguistics the naming for different parts of sentences might be odd.
+      - It is also possible to make weird sentences such as "book i can a table for 2" due to the division in verb.
+   - No constraint needed for "Booking takes place at least a day before" (confirmed by Homer).
+
 STUDENT INFO:
-    - Name: Bontinck Lennert
+	- Name: Bontinck Lennert
     - StudentID: 568702
     - Affiliation: VUB - Master Computer Science: AI 
 */
@@ -61,23 +69,26 @@ DCGs will be used to link the following arguments with natural language sentence
 	- Menu: chosen menu - standard, theatre or unspecified - constant
 */
 
-reservation_request( [Date, Time, Amount, Menu] ) --> random_text,
+reservation_request( [Date, Time, Amount, Menu] ) --> introduction_description,
 														amount_description(Amount),
 														time_description(Time),
 														date_description(Date),
-														menu_description(Menu) .
+														menu_description(Menu),
+														ending_description .
 
-reservation_request( [Date, Time, Amount, Menu] ) --> random_text,
+reservation_request( [Date, Time, Amount, Menu] ) --> introduction_description,
 														amount_description(Amount),
 														menu_description(Menu),
 														date_description(Date),
-														time_description(Time) .
+														time_description(Time),
+														ending_description .
 
-reservation_request( [Date, Time, Amount, Menu] ) --> random_text,
+reservation_request( [Date, Time, Amount, Menu] ) --> introduction_description,
 														time_description(Time),
 														amount_description(Amount),
 														date_description(Date),
-														menu_description(Menu) .
+														menu_description(Menu),
+														ending_description .
 
 
 
@@ -113,41 +124,26 @@ day(Day) --> [Day], { integer(Day), Day >= 1, Day =< 31 } .
 
 /* Succeeds when parsed textual day (e.g. first) is equal to interger representation in parameter (e.g. 1).
 	Note: since no examples from the given message inbox had this only a couple are provided as proof-of-concept. */
-day(Day) --> [RawDay], { downcase_atom(RawDay, StringDay),
-							StringDay = first, Day = 1 } .
-day(Day) --> [RawDay], { downcase_atom(RawDay, StringDay),
-							StringDay = second, Day = 2 } .
-day(Day) --> [RawDay], { downcase_atom(RawDay, StringDay),
-							StringDay = third, Day = 3 } .
+day(Day) --> [StringDay], { StringDay = first, Day = 1 } .
+day(Day) --> [StringDay], { StringDay = second, Day = 2 } .
+day(Day) --> [StringDay], { StringDay = third, Day = 3 } .
 
 /* Succeeds when a correct month integer (1 - 12) is parsed and equal to its parameter. */
 month(Month) --> [Month], { integer(Month), Month >= 1, Month =< 12 } .
 
 /* Succeeds when parsed textual month (e.g. march) is equal to integer representation in parameter (e.g. 3) */
-month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
-								StringMonth = january, Month = 1} .
-month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
-								StringMonth = february, Month = 2} .
-month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
-								StringMonth = march, Month = 3} .
-month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
-								StringMonth = april, Month = 4} .
-month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
-								StringMonth = may, Month = 5} .
-month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
-								StringMonth = june, Month = 6} .
-month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
-								StringMonth = july, Month = 7} .
-month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
-								StringMonth = august, Month = 8} .
-month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
-								StringMonth = september, Month = 9} .
-month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
-								StringMonth = october, Month = 10} .
-month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
-								StringMonth = november, Month = 11} .
-month(Month) --> [RawMonth], { downcase_atom(RawMonth, StringMonth),
-								StringMonth = december, Month = 12} .
+month(Month) --> [StringMonth], { StringMonth = january, Month = 1} .
+month(Month) --> [StringMonth], { StringMonth = february, Month = 2} .
+month(Month) --> [StringMonth], { StringMonth = march, Month = 3} .
+month(Month) --> [StringMonth], { StringMonth = april, Month = 4} .
+month(Month) --> [StringMonth], { StringMonth = may, Month = 5} .
+month(Month) --> [StringMonth], { StringMonth = june, Month = 6} .
+month(Month) --> [StringMonth], { StringMonth = july, Month = 7} .
+month(Month) --> [StringMonth], { StringMonth = august, Month = 8} .
+month(Month) --> [StringMonth], { StringMonth = september, Month = 9} .
+month(Month) --> [StringMonth], { StringMonth = october, Month = 10} .
+month(Month) --> [StringMonth], { StringMonth = november, Month = 11} .
+month(Month) --> [StringMonth], { StringMonth = december, Month = 12} .
 
 
 /* 
@@ -218,13 +214,80 @@ menu(Menu) --> [Menu], {Menu = standard} .
 
 /* 
 ----------------------------------------------
-|          NLP SYSTEM: TEXT SKIPPER          |
+|    NLP SYSTEM: INTRODUCTION AND ENDING     |
 ----------------------------------------------
 
-Since a message might contain irrelevant information the following can be used to filter it out.
-This is usefull for skipping a greeting (e.g. 'hello I would like to'). 
+Since a message might contain a greeting and an ending, which don't contain any value, they can be handled pretty easy. 
 */
 
-random_text --> [] .
-random_text --> [_], random_text .
+/* Succeeds when parsed text represent an introduction for the reservation, can be empty (e.g. we would like a table). */
+introduction_description --> [] .
+introduction_description --> greeting .
+introduction_description --> gratitude .
+introduction_description --> verb_description, noun_description .
+introduction_description --> gratitude, verb_description, noun_description .
+introduction_description --> greeting, verb_description, noun_description .
+introduction_description --> greeting, gratitude, verb_description, noun_description .
+introduction_description --> noun_description .
 
+/* Succeeds when parsed text represent a verb part of a sentce (e.g. can we have). */
+verb_description --> verb, pronoun, verb .
+verb_description --> pronoun, verb .
+
+/* Succeeds when parsed text represent a verb part of a sentce (e.g. a table). */
+noun_description --> article, noun .
+noun_description --> noun .
+
+/* Succeeds when parsed text represent an ending for the reservation, can be empty (e.g. thanks). */
+ending_description --> [] .
+ending_description --> gratitude .
+
+/* Succeeds when parsed text represent a greeting */
+greeting --> [hello] .
+greeting --> [hi] .
+
+/* Succeeds when parsed text represent a gratitude */
+gratitude --> [please] .
+gratitude --> [thanks] .
+gratitude --> [thank, you] .
+
+/* Succeeds when parsed text represent a pronoun */
+pronoun --> [i] .
+pronoun --> [we] .
+
+/* Succeeds when parsed text represent a verb (e.g. can, would, like) */
+verb --> [can] .
+verb --> [have] .
+verb --> [would, like] .
+verb --> [reserve] .
+verb --> [book] .
+
+/* Succeeds when parsed text represent an article (e.g. a, the) */
+article --> [a] .
+article --> [the] .
+
+/* Succeeds when parsed text represent a noun (e.g. table, place) */
+noun --> [table] .
+noun --> [place] .
+noun --> [spot] .
+
+
+
+
+
+/* 
+##################################################################
+#                             TESTING                            #
+##################################################################
+
+The code below is made available for easy testing.
+*/
+
+test_dcg_sample_1( Result ) :- reservation_request( Result, [table,for,2,at,20,':',00,on,18,march], []) .
+test_dcg_sample_2( Result ) :- reservation_request( Result, [please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th], []) .
+test_dcg_sample_3( Result ) :- reservation_request( Result, [we,would,like,a,table,for,5,preferably,at,8,pm,on,18,'/',03], []) .
+test_dcg_sample_4( Result ) :- reservation_request( Result, [can,i,book,a,table,at,9,pm,for,2,people,on,the,18,th,of,march,for,the,standard,menu,please], []) .
+test_dcg_sample_5( Result ) :- reservation_request( Result, [reserve,us,a,table,on,march,18,for,a,party,of,4,for,the,standard,menu], []) .
+test_dcg_sample_6( Result ) :- reservation_request( Result, [9,people,on,18,th,of,march], []) .
+test_dcg_sample_7( Result ) :- reservation_request( Result, [book,6,of,us,in,on,18,march,at,20,':',00], []) .
+test_dcg_sample_8( Result ) :- reservation_request( Result, [reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock], []) .

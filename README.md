@@ -5,6 +5,7 @@
 - [Used software](#used-software)
 - [Important files](#important-files)
 - [Running the assignment](#running-the-assignment)
+- [Assumptions made](#assumptions-made)
 - [Testing the created predicates](#testing-the-created-predicates)
 
 ## Student info
@@ -25,6 +26,12 @@
 - Make sure SWI Prolog is installed with the path variable set
 - Go to the root of this GitHub repository in your terminal
 - use:  ```swipl -s Bontinck_Lennert_568702_VUB_Restaurant.pl```
+
+## Assumptions made
+   - Since the text messages are said to be processed no operations such as downcase_atom (lowercase transformation) are done.
+   - Since we could make the NLP portion endlessly big, it is made so that only the examples and very minor extra's are accepted.
+      - These extra's are tested via is_test_processed_sms_inbox.
+   - Since I'm no expert in linguistics the naming for different parts of sentences might be odd.
 
 ## Testing the code
 
@@ -47,8 +54,7 @@ The created code was tested whilst being developed through the interpreter, maki
          - Answer: ```ExtractedMonth = 3.```
   
    - ```reservation_request``` (DCG)
-      - Test query: ```reservation_request( ExtractedValues, [table,for,2,at,20,':',00,on,18,march], []) .```
+      - To test these an easy 1 liner is made
+      - Test query: ```test_dcg_sample_1( Result )``` (or 2, 3 ...)
       - Answer: ```ExtractedValues = [[18, 3], [20, 0, fixed], 2, unspecified]```
-      - Test query: ```reservation_request( ExtractedValues, [please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th], []) .```
-      - Answer: ```ExtractedValues = [[18, 3], [_4032, _4038, none], 3, theatre]```
 
