@@ -19,7 +19,7 @@ Some things were assumed:
       - "preferable" is concerning the standard menu, not the time since it is situated before the menu. Thus menu also has the option to be "preferred".
 
 KNOWN BUGS:
-   - none :)
+   - Still some more tests to do
 
 STUDENT INFO:
     - Name: Bontinck Lennert
@@ -249,7 +249,7 @@ month(Month) --> [StringMonth], { StringMonth = december, Month = 12} .
 
 /* Succeeds when the parameter (Time = [Hour, Minute, Preference]) is equal to the parsed textual time description. */
 time_description([Hour, Minute, fixed]) --> [at], time([Hour, Minute]) .
-time_description([Hour, Minute, preferred]) --> [preferably, at], time([Hour, Minute])  .
+time_description([Hour, Minute, preferred]) --> preference, [at], time([Hour, Minute])  .
 no_time_description([_, _, unspecified]) --> [] .
 
 /* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed 24 hour time representation (e.g. 14:00). */
@@ -285,17 +285,11 @@ minute(Minute) --> [Minute], {integer(Minute), Minute >= 0, Minute =< 60} .
 
 /* Succeeds when the parameter (Amount) is equal to the parsed textual amount description. */
 amount_description(Amount) --> [for], amount(Amount) .
-amount_description(Amount) --> [for], amount(Amount), [people] .
-amount_description(Amount) --> [for], amount(Amount), [persons] .
-amount_description(Amount) --> [for], amount(Amount), [person] .
-amount_description(Amount) --> [for, a, party, of], amount(Amount).
-amount_description(Amount) --> [for, a, party, of], amount(Amount), [people] .
-amount_description(Amount) --> [for, a, party, of], amount(Amount), [persons] .
-amount_description(Amount) --> [for, a, party, of], amount(Amount), [person] .
-amount_description(Amount) --> amount(Amount), [people] .
-amount_description(Amount) --> amount(Amount), [persons] .
-amount_description(Amount) --> amount(Amount), [person] .
-amount_description(Amount) --> [book], amount(Amount), [of, us, in] .
+amount_description(Amount) --> [for], amount(Amount), humans .
+amount_description(Amount) --> [for, a, party, of], amount(Amount) .
+amount_description(Amount) --> [for, a, party, of], amount(Amount), humans .
+amount_description(Amount) --> amount(Amount), humans .
+amount_description(Amount) --> [book], amount(Amount), humans, [in] .
 
 /* Succeeds when the parameter (Amount) is equal to the parsed textual representation of a positive integer representing the amount. */
 amount(Amount) --> positive_integer(Amount) .
@@ -309,9 +303,11 @@ amount(Amount) --> positive_integer(Amount) .
 
 /* Succeeds when the parameter (Menu) is equal to the parsed textual menu description. */
 menu_description([Menu, fixed]) --> [for], article, menu(Menu), [menu] .
-menu_description([Menu, preferred]) --> [preferably, for], article, menu(Menu), [menu] .
+menu_description([Menu, preferred]) --> preference, [for], article, menu(Menu), [menu] .
+
 menu_description([Menu, fixed]) --> [for], menu(Menu), [menu] .
-menu_description([Menu, preferred]) --> [preferably, for], menu(Menu), [menu] .
+menu_description([Menu, preferred]) --> preference, [for], menu(Menu), [menu] .
+
 no_menu_description([_, unspecified]) --> [] .
 
 /* Succeeds when the parameter (Menu) is equal to the textual representation of an allowed menu.
@@ -381,6 +377,16 @@ noun --> [table] .
 noun --> [place] .
 noun --> [spot] .
 noun --> [reservation] .
+
+/* Succeeds when parsed text represent a preference (e.g. preferably) */
+preference --> [preferably] .
+preference --> [prefering] .
+
+/* Succeeds when parsed text represent a synonym for a group of humans (e.g. people, persons) */
+humans --> [people] .
+humans --> [persons] .
+humans --> [person] .
+humans --> [of, us] .
 
 
 /* 
