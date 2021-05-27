@@ -25,19 +25,27 @@
 - Make sure SWI Prolog is installed with the path variable set
 - Go to the root of this GitHub repository in your terminal
 - use:  ```swipl -s Bontinck_Lennert_568702_VUB_Restaurant.pl```
-## Testing the created predicates
 
-The created predicates were tested on an individual basis through the interpreter, making sure all returned answers are correct by backtracking as well (using ;).
+## Testing the code
+
+The created code was tested whilst being developed through the interpreter, making sure all returned answers for queries are correct by backtracking as well (using ;).
 
 - SMS INBOX
    - ```is_processed_sms_inbox```
       - Succeeds when the argument represents the pre-processed sms inbox provided by the assignment.
-      - Test query: ```is_processed_sms_inbox(Inbox) .```
-      - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on|...], [please, can, we, have, a, table, for|...], [we, would, like, a, table, for|...], [can, i, book, a, table|...], [reserve, us, a, table|...], [9, people, on|...], [book, 6|...], [reservation|...]].```
+         - Test query: ```is_processed_sms_inbox(Inbox) .```
+         - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on|...], [please, can, we, have, a, table, for|...], [we, would, like, a, table, for|...], [can, i, book, a, table|...], [reserve, us, a, table|...], [9, people, on|...], [book, 6|...], [reservation|...]].```
 - NLP SYSTEM
+   -  ```day``` (DCG)
+      - Succeeds when parsed textual day (e.g. first) is equal to interger representation in parameter (e.g. 1).
+         - Test query: ```day( ExtractedDay, [13], [] ) .```
+         - Answer: ```ExtractedDay = 13 ;```
+   
    - ```month``` (DCG)
-      - Test query: ```month( ExtractedMonth, [march], [] ) .```
-      - Answer: ```ExtractedMonth = 3.```
+      - Succeeds when parsed textual month (e.g. march) is equal to integer representation in parameter (e.g. 3).
+         - Test query: ```month( ExtractedMonth, [march], [] ) .```
+         - Answer: ```ExtractedMonth = 3.```
+  
    - ```reservation_request``` (DCG)
       - Test query: ```reservation_request( ExtractedValues, [table,for,2,at,20,':',00,on,18,march], []) .```
       - Answer: ```ExtractedValues = [[18, 3], [20, 0], 2, either].```
