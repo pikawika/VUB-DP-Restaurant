@@ -413,7 +413,7 @@ humans --> [of, us] .
 #                        TESTING NLP SYSTEM                      #
 ##################################################################
 
-The code below is made available for easy testing.
+The code below is made available for easy testing of the NLP (DCG) system.
 */
 
 test_dcg_sample_1(Result) :- is_processed_sms_inbox(List), nth1(1,List,Sample), reservation_request( Result, Sample, []) .
@@ -438,3 +438,19 @@ test_dcg_sample_all() :- test_dcg_sample_1( _ ),
    							test_dcg_sample_8( _ ),
    							test_dcg_sample_extra_1( _ ),
    							test_dcg_sample_extra_2( _ ) .
+
+/* 
+##################################################################
+#                        CONSTRAINT SYSTEM                       #
+##################################################################
+
+The following code implements the constraint system to perform the scheduling of the restaurant.
+*/
+
+/* 
+----------------------------------------------
+|                     XXX                    |
+----------------------------------------------
+
+YYY
+*/
