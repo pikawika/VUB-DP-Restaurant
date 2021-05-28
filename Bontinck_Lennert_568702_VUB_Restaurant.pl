@@ -3,9 +3,18 @@
 The GitHub repository for this project is available at: https://github.com/pikawika/VUB-DP-Restaurant.
     It will be made public once the deadline of the assignment has passed to ensure it isn't fraudulently used by colleague students.
 
-The created predicates were tested on an individual basis through the interpreter.
-    The README.md file contains these test queries used in the interpreter.
-    The readme is best read through a markdown editor or directly on Github but a copy of the README file is provided as a huge comment at the bottom of this file.
+The created code was tested on an incremental basis through the interpreter.
+   - The README.md file contains these test queries used in the interpreter.
+      - The readme is best read through a markdown editor or directly on Github but a copy of the README file is provided as a huge comment at the bottom of this file.
+   - Some predicates were made to make testing easy through a "one line" query.
+
+Testing performed:
+   - Testing SMS INBOX:
+      - Simple unifaction tests.
+   - Testing the DCG:
+      - Helpfull testing predicates available under: TESTING NLP SYSTEM
+      - Done through manually validating the extracted arguments of both the supplied sms inbox as well as a supplamentory inbox.
+	  - Some extra tests for testing individual components of the grammar such as date extraction.
 
 Some things were assumed:
    - Since the text messages are said to be processed no operations such as downcase_atom (lowercase transformation) are done.
@@ -17,6 +26,7 @@ Some things were assumed:
    - For the following sentence: "preferably for the standard menu at 7 o'clock"
       - 7 o'clock is 7 pm since the restaurant is not open in the morning.
       - "preferable" is concerning the standard menu, not the time since it is situated before the menu. Thus menu also has the option to be "preferred".
+
 
 KNOWN BUGS:
    - Still some more tests to do
@@ -69,17 +79,26 @@ is_extra_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,march],
 
 The following code implements the Definite Clause Grammars (DCGs).
 DCGs are a facility in Prolog which makes it easy to define languages according to grammar rules.
-DCGs will be used to link the following arguments with natural language sentences:
-	- Date: day of reservation - [Day, Month] - both integer
-	- Time: time of reservation - [Hour, Minute, Preference] - Hour and Minute are integers or _ and Preference is a constant being fixed, preferred or unspecified
-	- Amount: number of people - integer
-	- Menu: chosen menu - [Menu, Preference] - Menu is the constant standard or theatre or _ and Preference is also a constant being fixed, preferred or unspecified
+
+In our system the accepted grammers consist of a few majour parts which can be in different orders:
+   - introduction description: introductory part of sentence. (e.g. "we would like to order a table")
+   - amount_description: part of sentence that specifies the amount of people. (e.g. "for 2 people")
+   - time_description: part of sentence that specifies the time of the reservation, can be non-specified. (e.g. "8 pm")
+   - date_description: part of sentence that specifies the date of the reservation. (e.g. "first of march")
+   - menu_description: part of sentence that specifies the preffered menu, can be non-specified. (e.g. "for the standard menu")
+   - ending_description: ending part of sentence. (e.g. "thank you")
+
+A reservation request is a natural language sentence having the above parts from wich the following following arguments can be extracted:
+   - Date: day of reservation - [Day, Month] - both integer
+   - Time: time of reservation - [Hour, Minute, Preference] - Hour and Minute are integers or _ and Preference is a constant being either fixed, preferred or unspecified
+   - Amount: number of people - integer
+   - Menu: chosen menu - [Menu, Preference] - Menu is a constant being either standard, theatre or _ and Preference is also a constant being either fixed, preferred or unspecified
 */
 
 reservation_request([Date, Time, Amount, Menu]) --> sentence([Date, Time, Amount, Menu] ) . 
 
 /* The following sentences include all parts, alternatives where optional parts are left out are below.
-    The alternatives are handled separately to avoid multiple true answers for DCGs with optional values left out. */
+    The alternatives are handled separately as allowing empty values for sentence parts would cause some of the following sentences to be equal and thus produce multiple true values in some cases. */
 sentence([Date, Time, Amount, Menu]) --> introduction_description,
 											amount_description(Amount),
 											time_description(Time),

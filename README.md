@@ -35,40 +35,67 @@
 
 ## Testing the code
 
-The created code was tested whilst being developed through the interpreter, making sure all returned answers for queries are correct by backtracking as well (using ;).
+The created code was tested whilst being developed through the interpreter, making sure all returned answers for queries are correct by backtracking as well (using ;). Some predicates were made to make testing easy through a "one line" query.
+
+Some examples of such tests through the interpreter are given below.
 
 - SMS INBOX
    - ```is_processed_sms_inbox```
       - Succeeds when the argument represents the pre-processed SMS inbox provided by the assignment.
          - Test query: ```is_processed_sms_inbox(Inbox) .```
          - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on|...], [please, can, we, have, a, table, for|...], [we, would, like, a, table, for|...], [can, i, book, a, table|...], [reserve, us, a, table|...], [9, people, on|...], [book, 6|...], [reservation|...]].```
+   - ```is_extra_processed_sms_inbox```
+      - Succeeds when the argument represents the pre-processed SMS inbox provided by the assignment.
+         - Test query: ```is_extra_processed_sms_inbox(Inbox) .```
+         - Answer: ```Inbox = XXX.```
 - NLP SYSTEM
-   -  ```day``` (DCG)
-      - Succeeds when parsed textual day (e.g. first) is equal to integer representation in parameter (e.g. 1).
-         - Test query: ```day( ExtractedDay, [13], [] ) .```
-         - Answer: ```ExtractedDay = 13 ;```
-   
-   - ```month``` (DCG)
-      - Succeeds when parsed textual month (e.g. march) is equal to integer representation in parameter (e.g. 3).
-         - Test query: ```month( ExtractedMonth, [march], [] ) .```
-         - Answer: ```ExtractedMonth = 3.```
-  
-   - ```reservation_request``` (DCG)
+   -  ```Date``` (DCG)
+      - Succeeds when the parameter (Date = [Day, Month]) is equal to the parsed textual representation of a date.
+         - Test query: ```date( ExtractedDate, [first,of,april], [] ) .```
+            - Answer: ```ExtractedDate = [1, 4]```
+         - Test query: ```date( ExtractedDate, [23,'/',12], [] ) .```
+            - Answer: ```ExtractedDate = [23, 12]```
+   - ```time``` (DCG)
+      - Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed textual representation of time.
+         - Test query: ```time( ExtractedTime, [18,':',00], [] ) .```
+            - Answer: ```ExtractedTime = [18, 0]```
+        - Test query: ```time( ExtractedTime, [6,pm], [] ) .```
+           - Answer: ```ExtractedTime = [18, 0]```
+        - Test query: ```time( ExtractedTime, [6,oclock], [] ) .```
+           - Answer: ```ExtractedTime = [18, 0]```
+   -  ```amount``` (DCG)
+      -  Succeeds when the parameter (Amount) is equal to the parsed textual representation of a positive integer representing the amount.
+      -  Test query: ```amount( ExtractedAmount, [5], [] ) .```
+         - Answer: ```ExtractedAmount = 5```
+      -  Test query: ```amount( ExtractedAmount, [0], [] ) .```
+         - Answer: ```false```
+   -  ```menu``` (DCG)
+      -  Succeeds when the parameter (Menu) is equal to the textual representation of an allowed menu.
+      -  Test query: ```menu( ExtractedMenu, [theatre], [] ) .```
+         - Answer: ```ExtractedMenu = theatre```
+      -  Test query: ```menu( ExtractedMenu, [deluxe], [] ) .```
+         - Answer: ```false```
+   -  ```reservation_request``` and thus ```sentence```  (DCG)
       - To test these an easy 1 liner is made
-      - Test query: ```test_dcg_sample_1( Result )```
+      - Test query: ```test_dcg_sample_1( Result ) .```
          - Answer: ```Result = [[18, 3], [20, 0, fixed], 2, [_8516, unspecified]]```
-      - Test query: ```test_dcg_sample_2( Result )```
+      - Test query: ```test_dcg_sample_2( Result ) .```
          - Answer: ```Result = [[18, 3], [_10052, _10058, unspecified], 3, [theatre, fixed]]```
-      - Test query: ```test_dcg_sample_3( Result )```
+      - Test query: ```test_dcg_sample_3( Result ) .```
          - Answer: ```Result = [[18, 3], [20, 0, preferred], 5, [_11612, unspecified]]```
-      - Test query: ```test_dcg_sample_4( Result )```
+      - Test query: ```test_dcg_sample_4( Result ) .```
          - Answer: ```Result = [[18, 3], [21, 0, fixed], 2, [standard, fixed]]```
-      - Test query: ```test_dcg_sample_5( Result )```
+      - Test query: ```test_dcg_sample_5( Result ) .```
          - Answer: ```Result = [[18, 3], [_14744, _14750, unspecified], 4, [standard, fixed]] ;```
-      - Test query: ```test_dcg_sample_6( Result )```
+      - Test query: ```test_dcg_sample_6( Result ) .```
          - Answer: ```Result = [[18, 3], [_17768, _17774, unspecified], 9, [_17756, unspecified]]```
-      - Test query: ```test_dcg_sample_7( Result )```
+      - Test query: ```test_dcg_sample_7( Result ) .```
          - Answer: ```Result = [[18, 3], [20, 0, fixed], 6, [_19304, unspecified]]```
-      - Test query: ```test_dcg_sample_8( Result )```
-         - Answer: ```Result = [[18, 3], [19, 0, fixed], 7, [standard, preferred]] ;```
-      - ... 
+      - Test query: ```test_dcg_sample_8( Result ) .```
+         - Answer: ```Result = [[18, 3], [19, 0, fixed], 7, [standard, preferred]```
+      - Test query: ```test_dcg_sample_extra_1( Result ) .```
+         - Answer: ```Result = [[1, 3], [20, 0, fixed], 2, [_1878, unspecified]]```
+      - Test query: ```test_dcg_sample_extra_2( Result ) .```
+         - Answer: ```Result = [[1, 3], [_4024, _4030, unspecified], 2, [_4012, unspecified]]```
+      - Test query: ```test_dcg_sample_all() .```
+         - Answer: ```true```
