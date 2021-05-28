@@ -10,7 +10,7 @@
 
 ## Student info
 - **Name**: Bontinck Lennert
-- **StudentID**: 568702
+- **Student ID**: 568702
 - **Affiliation**: VUB - Master Computer Science: AI
 
 ## Used software
@@ -99,3 +99,16 @@ Some examples of such tests through the interpreter are given below.
          - Answer: ```Result = [[1, 3], [_4024, _4030, unspecified], 2, [_4012, unspecified]]```
       - Test query: ```test_dcg_sample_all() .```
          - Answer: ```true```
+- CONSTRAINT SYSTEM
+   - ```constrain_restaurant_time``` (CLPFD)
+      - Constraints for restaurant time:
+         - Must be in opening hours
+         - Must be long enough for menu
+      - Test query: ```constrain_reservation_time([reservation(_, _, [StartHour, StartMinute], [EndHour, EndMinute], _, 1, _)]), indomain(StartHour) .```
+         - Answer: ```StartHour = 19, StartMinute = EndMinute, EndHour = 21, EndMinute in 0..60 ; [...] StartHour = 21, StartMinute = EndMinute,  ndMinute = 0, EndHour = 23. ```
+   - ```constrain_reservation_table``` (CLPFD)
+      -  Constraints for reservation tables:
+         - Tables must be able to seat all people
+         - Amount of people must not exceed maximum capacity (9)
+      - Test query: ```constrain_reservation_table([reservation(_, [Day, Month], [StartHour, StartMinute], [EndHour, EndMinute], 6, _, [TableFor2, TableFor3, TableFor4])]), indomain(TableFor2) .```
+         - Answer: ```TableFor2 = 0, TableFor3 = TableFor4, TableFor4 = 1 ; TableFor2 = TableFor4, TableFor4 = 1, TableFor3 in 0..1, _43406#=3*TableFor3+6, _43406 in 6..9.```

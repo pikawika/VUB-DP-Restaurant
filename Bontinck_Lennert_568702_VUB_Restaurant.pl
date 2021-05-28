@@ -29,11 +29,12 @@ Some things were assumed:
 
 
 KNOWN BUGS:
-   - Still some more tests to do
+   - Time constraints only look at hour thus assuming minutes is always "0".
+   - Table does not check double assign.
 
 STUDENT INFO:
     - Name: Bontinck Lennert
-    - StudentID: 568702
+    - Student ID: 568702
     - Affiliation: VUB - Master Computer Science: AI 
 */
 
@@ -45,9 +46,25 @@ STUDENT INFO:
 The following code will import the required libraries:
         - lists: used since it's seen as the default library for basic lists operation. 
             The used documentation can be found here: https://www.swi-prolog.org/pldoc/man?section=lists.
+        - clpfd: used since it's seen as the default library for Constraint Logic Programming with Finite Domains 
+            The used documentation can be found here: https://www.swi-prolog.org/pldoc/man?section=summary-lib-clpfd.
 */
 
-:- use_module( [library(lists)] ).
+:- use_module( 	[library(lists),
+				library(clpfd)] ).
+
+
+/* 
+##################################################################
+#                        GLOBAL PREDICATES                       #
+##################################################################
+
+Some global queries to ensure uniformity.
+*/
+
+/* Allows to represent menu as integer */
+is_menu(1, standard) .
+is_menu(2, theatre) .
 
 /* 
 ##################################################################
@@ -99,108 +116,122 @@ reservation_request([Date, Time, Amount, Menu]) --> sentence([Date, Time, Amount
 
 /* The following sentences include all parts, alternatives where optional parts are left out are below.
     The alternatives are handled separately as allowing empty values for sentence parts would cause some of the following sentences to be equal and thus produce multiple true values in some cases. */
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											amount_description(Amount),
-											time_description(Time),
-											date_description(Date),
-											menu_description(Menu),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) --> 
+	introduction_description,
+	amount_description(Amount),
+	time_description(Time),
+	date_description(Date),
+	menu_description(Menu),
+	ending_description .
 
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											amount_description(Amount),
-											menu_description(Menu),
-											date_description(Date),
-											time_description(Time),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) --> 
+	introduction_description,
+	amount_description(Amount),
+	menu_description(Menu),
+	date_description(Date),
+	time_description(Time),
+	ending_description .
 
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											time_description(Time),
-											amount_description(Amount),
-											date_description(Date),
-											menu_description(Menu),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) --> 
+	introduction_description,
+	time_description(Time),
+	amount_description(Amount),
+	date_description(Date),
+	menu_description(Menu),
+	ending_description .
 
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											date_description(Date),
-											time_description(Time),
-											amount_description(Amount),
-											menu_description(Menu),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) --> 
+	introduction_description,
+	date_description(Date),
+	time_description(Time),
+	amount_description(Amount),
+	menu_description(Menu),
+	ending_description .
 
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											amount_description(Amount),
-											date_description(Date),
-											menu_description(Menu),
-											time_description(Time),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) --> 
+	introduction_description,
+	amount_description(Amount),
+	date_description(Date),
+	menu_description(Menu),
+	time_description(Time),
+	ending_description .
 
 
 /* The following sentences include all parts except menu description. */
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											amount_description(Amount),
-											time_description(Time),
-											date_description(Date),
-											no_menu_description(Menu),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) --> 
+	introduction_description,
+	amount_description(Amount),
+	time_description(Time),
+	date_description(Date),
+	no_menu_description(Menu),
+	ending_description .
 
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											amount_description(Amount),
-											date_description(Date),
-											time_description(Time),
-											no_menu_description(Menu),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) --> 
+	introduction_description,
+	amount_description(Amount),
+	date_description(Date),
+	time_description(Time),
+	no_menu_description(Menu),
+	ending_description .
 
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											time_description(Time),
-											amount_description(Amount),
-											date_description(Date),
-											no_menu_description(Menu),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) --> 
+	introduction_description,
+	time_description(Time),
+	amount_description(Amount),
+	date_description(Date),
+	no_menu_description(Menu),
+	ending_description .
 
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											date_description(Date),
-											time_description(Time),
-											amount_description(Amount),
-											no_menu_description(Menu),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) -->
+	introduction_description,
+	date_description(Date),
+	time_description(Time),
+	amount_description(Amount),
+	no_menu_description(Menu),
+	ending_description .
 
 
 /* The following sentences include all parts except time description. */
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											amount_description(Amount),
-											date_description(Date),
-											menu_description(Menu),
-											no_time_description(Time),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) --> 
+	introduction_description,
+	amount_description(Amount),
+	date_description(Date),
+	menu_description(Menu),
+	no_time_description(Time),
+	ending_description .
 
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											amount_description(Amount),
-											menu_description(Menu),
-											date_description(Date),
-											no_time_description(Time),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) -->
+	introduction_description,
+	amount_description(Amount),
+	menu_description(Menu),
+	date_description(Date),
+	no_time_description(Time),
+	ending_description .
 
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											date_description(Date),
-											amount_description(Amount),
-											menu_description(Menu),
-											no_time_description(Time),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) --> 
+	introduction_description,
+	date_description(Date),
+	amount_description(Amount),
+	menu_description(Menu),
+	no_time_description(Time),
+	ending_description .
 
 /* The following sentences include all parts except time and menu description. */
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											amount_description(Amount),
-											date_description(Date),
-											no_menu_description(Menu),
-											no_time_description(Time),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) --> 
+	introduction_description,
+	amount_description(Amount),
+	date_description(Date),
+	no_menu_description(Menu),
+	no_time_description(Time),
+	ending_description .
 
-sentence([Date, Time, Amount, Menu]) --> introduction_description,
-											date_description(Date),
-											amount_description(Amount),
-											no_menu_description(Menu),
-											no_time_description(Time),
-											ending_description .
+sentence([Date, Time, Amount, Menu]) -->
+	introduction_description,
+	date_description(Date),
+	amount_description(Amount),
+	no_menu_description(Menu),
+	no_time_description(Time),
+	ending_description .
 
 
 /* 
@@ -287,10 +318,11 @@ time([Hour, Minute]) --> hour_pm(Hour), [oclock], minute(Minute) .
 time([Hour, 0]) --> hour_pm(Hour), [oclock] .
 
 /* Succeeds when the paramater (Hour) is equal to textual represenatation) */
-hour(Hour) --> [Hour], {integer(Hour), Hour > 0, Hour =< 23} .
-hour_pm(Hour) --> [RawHour], {integer(RawHour),
-								RawHour >= 1, RawHour =< 12,
-								Hour is RawHour + 12} .
+hour(Hour) -->[Hour], {integer(Hour), Hour > 0, Hour =< 23} .
+hour_pm(Hour) --> 
+	[RawHour], {integer(RawHour),
+	RawHour >= 1, RawHour =< 12,
+	Hour is RawHour + 12} .
 
 /* Succeeds when the paramater (Minute) is equal to parsed textual represenatation. (e.g. 00) */
 minute(Minute) --> [Minute], {integer(Minute), Minute >= 0, Minute =< 60} .
@@ -428,29 +460,99 @@ test_dcg_sample_8(Result) :- is_processed_sms_inbox(List), nth1(8,List,Sample), 
 test_dcg_sample_extra_1(Result) :- is_extra_processed_sms_inbox(List), nth1(1,List,Sample), reservation_request( Result, Sample, []) .
 test_dcg_sample_extra_2(Result) :- is_extra_processed_sms_inbox(List), nth1(2,List,Sample), reservation_request( Result, Sample, []) .
 
-test_dcg_sample_all() :- test_dcg_sample_1( _ ),
-   							test_dcg_sample_2( _ ),
-   							test_dcg_sample_3( _ ),
-   							test_dcg_sample_4( _ ),
-   							test_dcg_sample_5( _ ),
-   							test_dcg_sample_6( _ ),
-   							test_dcg_sample_7( _ ),
-   							test_dcg_sample_8( _ ),
-   							test_dcg_sample_extra_1( _ ),
-   							test_dcg_sample_extra_2( _ ) .
+test_dcg_sample_all() :- 
+	test_dcg_sample_1( _ ),
+   	test_dcg_sample_2( _ ),
+   	test_dcg_sample_3( _ ),
+   	test_dcg_sample_4( _ ),
+   	test_dcg_sample_5( _ ),
+   	test_dcg_sample_6( _ ),
+   	test_dcg_sample_7( _ ),
+   	test_dcg_sample_8( _ ),
+   	test_dcg_sample_extra_1( _ ),
+   	test_dcg_sample_extra_2( _ ) .
 
 /* 
 ##################################################################
 #                        CONSTRAINT SYSTEM                       #
 ##################################################################
 
-The following code implements the constraint system to perform the scheduling of the restaurant.
+The following code implements the CLP(FD), Constraint Logic Programming with Finite Domains, to perform the scheduling of the restaurant.
+In Prolog one can think of the constraint system as part of the unifaction process.
+Indeed, we associate a set of “allowed values” with each variable, and then any attempt to unify it with something “not allowed” will fail.
+Doing this will "prune" the solution trees branches that are known to fail, due to the failed constraint, enhacing the execution speed.
+
+A reservation is represented as [Id, Date, StartTime, Endtime, Amount, Menu, Table]:
+   - Id: used to link reservation to original messsage - integer
+   - Date: date for reservation - [Day, Month], both integer
+   - StartTime: time the customer is expected to come - [Hour, Minute], both integer
+   - EndTime: time the customer is expected to leave - [Hour, Minute], both integer
+      - Note: this is in a way redundant but easy to have
+   - Amount: number of people that have made a reservation - integer
+   - Menu: menu for group - integer
+   - Tables: assigned tables for group - [TableFor2, TableFor3, TableFor4], all boolean integers
+
+The following concepts are constraint:
+   - Time
+      - Must be in opening hours
+	  - Must be long enough for menu
+   - Constraints for reservation tables
+      - Tables must be able to seat all people
+
 */
+
+
+
 
 /* 
 ----------------------------------------------
-|                     XXX                    |
+|                  CLP: Time                 |
 ----------------------------------------------
 
-YYY
+The below code is responsible for constraining the time variables of a reservation.
+Remember that the restaurant (and kitchen) is open from 19:00 - 23:00.
+The internal representation of a time variable is a list: [Hour, Minute], both being integers.
 */
+
+/* Constraints for reservation time:
+   - Must be in opening hours
+   - Must be long enough for menu
+ */
+constrain_reservation_time([]) .
+
+constrain_reservation_time([reservation(_, _, [StartHour, StartMinute], [EndHour, EndMinute], _, Menu, _) | OtherReservations]) :- 
+	StartHour in 19..23,
+	StartMinute in 0..60,
+	EndHour in 19..23,
+	EndMinute in 0..60,
+	EndHour #>= StartHour,
+	( EndHour #= 23 ) #==> ( EndMinute #= 0 ),
+	( Menu #= 1 ) #==> ( EndHour - StartHour #= 2 ),
+	( Menu #= 2 ) #==> ( EndHour - StartHour #= 1 ),
+	( Menu in 1 .. 2 ) #==> ( StartMinute #= EndMinute ),
+	constrain_reservation_time(OtherReservations) .
+
+/* 
+----------------------------------------------
+|                 CLP: Tables                |
+----------------------------------------------
+
+The below code is responsible for constraining the table variables of a reservation.
+Remember that there are three tables with different capicities.
+The internal representation of a table variable is a list: [TableFor2, TableFor3, TableFor4], all boolean integers
+*/
+
+/* Constraints for reservation tables:
+   - Amount of people must not exceed maximum capacity (9)
+   - Tables must be able to seat all people
+ */
+constrain_reservation_table([]) .
+
+constrain_reservation_table([reservation(_, _, _, _, Amount, _, [TableFor2, TableFor3, TableFor4]) | OtherReservations]) :- 
+	Amount in 1..9,
+	TableFor2 in 0..1,
+	TableFor3 in 0..1,
+	TableFor4 in 0..1,
+	TotalSeatingCapacity #= 2*TableFor2 + 3*TableFor3 + 4*TableFor4,
+	TotalSeatingCapacity #>= Amount,
+	constrain_reservation_table(OtherReservations) .
