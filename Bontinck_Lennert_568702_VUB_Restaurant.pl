@@ -29,7 +29,6 @@ Some things were assumed:
 
 
 KNOWN BUGS:
-   - Time constraints only look at hour thus assuming minutes is always "0".
    - Table does not check double assign.
 
 STUDENT INFO:
