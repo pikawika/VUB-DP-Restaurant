@@ -525,19 +525,22 @@ The following concepts are constraint:
 
 The below code is responsible for constraining the menu variables of a reservation.
 Remember that the restaurant has 2 menu's currently, standard and theatre, both represented as integers.
+NOTE: these constraints are a bit dull and perhaps redundant.
 */
 
 /* Constraints for menu:
    - Must be a legal menu
+   - Only one menu must be chosen
  */
 constrain_reservation_request_menu([]) .
 
-constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _ClpTables) | OtherReservations]) :- 
+constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _Tables) | OtherReservations]) :- 
+	Menu in 1..2,
 	is_menu(StandardMenu, standard),
 	is_menu(TheatreMenu, theatre),
-	( Menu #= StandardMenu ) #==> ( MenuChosen ),
-	( Menu #= TheatreMenu ) #==> ( MenuChosen ),
-	MenuChosen #= 1,	
+	( Menu #= StandardMenu ) #==> ( StandardMenuChosen ),
+	( Menu #= TheatreMenu ) #==> ( TheatreMenuChosen ),
+	StandardMenuChosen + TheatreMenuChosen #= 1,	
 	constrain_reservation_request_menu(OtherReservations) .
 
 
@@ -557,7 +560,7 @@ The internal representation of a time variable is a list: [Hour, Minute], both b
  */
 constrain_reservation_request_time([]) .
 
-constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [Menu, _MenuPreference], _ClpTables) | OtherReservations]) :- 
+constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [Menu, _MenuPreference], _Tables) | OtherReservations]) :- 
 	is_opening_time(OpeningTime),
 	is_closing_time(ClosingTime),
 	StartTime in OpeningTime..ClosingTime,

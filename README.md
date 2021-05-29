@@ -109,13 +109,17 @@ Some examples of such tests through the interpreter are given below.
       - Test query: ```test_dcg_sample_all() .```
          - Answer: ```true```
 - CONSTRAINT SYSTEM
-   - ```constrain_restaurant_time``` (CLPFD)
+   - ```constrain_reservation_request_menu``` (CLPFD)
+      - Constraints for menu to be singular allowed menu.
+      - Test query: ```constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _Tables)]), indomain(Menu).```
+         - Answer: ```Menu = 1 ; Menu = 2.```
+   - ```constrain_reservation_request_time``` (CLPFD)
       - Constraints for restaurant time:
          - Must be in opening hours
          - Must be long enough for menu
       - Test query: ```constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [1, _MenuPreference], _ClpTables)]) .```
          - Answer: ```StartTime in 1140..1260, 120+StartTime#=EndTime, EndTime in 1260..1380```
-   - ```constrain_reservation_table``` (CLPFD)
+   - ```constrain_reservation_request_table``` (CLPFD)
       -  Constraints for reservation tables:
          - Tables must be able to seat all people
          - Amount of people must not exceed maximum capacity (9)
