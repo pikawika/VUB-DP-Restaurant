@@ -55,20 +55,31 @@ The following code will import the required libraries:
 
 /* 
 ##################################################################
-#                        GLOBAL PREDICATES                       #
+#                       GENERAL PREDICATES                       #
 ##################################################################
 
 Some global queries to ensure uniformity.
 */
 
-/* Allows to represent menu as integer */
+/* Succeeds when the first parameter is the integer representation of the second parameter's menu term */
 is_menu(1, standard) .
 is_menu(2, theatre) .
 
-/* Allows to represent preference as integer */
+/* Succeeds when the first parameter is the integer representation of the second parameter's preference term  */
 is_preference(1, fixed) .
 is_preference(2, preferred) .
 is_preference(3, unspecified) .
+
+/* Succeeds when first parameter (MinuteSinceMidnight) is equal to the passed minutes since midnight for the given second parameter ([Hour, Minute]) */
+minutes_since_midnight(MinuteSinceMidnight, [Hour, Minute]) :-
+	MinuteSinceMidnight #= Hour*60 + Minute,
+	Hour in 0..23,
+	Minute in 0..59,
+	labeling( [ffc], [MinuteSinceMidnight, Hour, Minute] ) .
+
+/* Succeeds when the first parameter is equal to the passed minutes since midnight for opening times  */
+is_opening_time(Time) :- minutes_since_midnight(Time, [19, 00]) .
+is_closing_time(Time) :- minutes_since_midnight(Time, [23, 00]) .
 
 /* 
 ##################################################################
@@ -493,13 +504,9 @@ Doing this will "prune" the solution trees branches that are known to fail, due 
 A reservation is represented as [Id, Date, StartTime, Endtime, Amount, Menu, Table]:
    - Id: used to link reservation to original messsage - integer
    - Date: date for reservation - [Day, Month], both integer
-   - StartTime: time the customer is expected to come - [Hour, Minute], both integer
-   - EndTime: time the customer is expected to leave - [Hour, Minute], both integer
-      - Note: this is in a way redundant but easy to have
-   - TimePreference: preference of time slot - integer
+   - Time: time the customer is expected to come and leave and its preference - [StartTime, EndTime, TimePreference] - StartTime and EndTime represented in minutes since midnight (integer), TimePreference as integer representation
    - Amount: number of people that have made a reservation - integer
-   - Menu: menu for group - integer
-   - MenuPreference: preference of chosen menu - integer
+   - Menu: menu for group and it's preference - [Menu, MenuPreference] - both integer representation of the categorical values
    - Tables: assigned tables for group - [TableFor2, TableFor3, TableFor4], all boolean integers
 
 The following concepts are constraint:
@@ -511,7 +518,27 @@ The following concepts are constraint:
 
 */
 
+/* 
+----------------------------------------------
+|                  CLP: Menu                 |
+----------------------------------------------
 
+The below code is responsible for constraining the menu variables of a reservation.
+Remember that the restaurant has 2 menu's currently, standard and theatre, both represented as integers.
+*/
+
+/* Constraints for menu:
+   - Must be a legal menu
+ */
+constrain_reservation_request_menu([]) .
+
+constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _ClpTables) | OtherReservations]) :- 
+	is_menu(StandardMenu, standard),
+	is_menu(TheatreMenu, theatre),
+	( Menu #= StandardMenu ) #==> ( MenuChosen ),
+	( Menu #= TheatreMenu ) #==> ( MenuChosen ),
+	MenuChosen #= 1,	
+	constrain_reservation_request_menu(OtherReservations) .
 
 
 /* 
@@ -530,17 +557,18 @@ The internal representation of a time variable is a list: [Hour, Minute], both b
  */
 constrain_reservation_request_time([]) .
 
-constrain_reservation_request_time([reservation_request(_Id, _Date, [StartHour, StartMinute], [EndHour, EndMinute], _TimePreference, _Amount, [Menu, _MenuPreference], _ClpTables) | OtherReservations]) :- 
-	StartHour in 19..23,
-	StartMinute in 0..60,
-	EndHour in 19..23,
-	EndMinute in 0..60,
-	EndHour #>= StartHour,
-	( EndHour #= 23 ) #==> ( EndMinute #= 0 ),
+constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [Menu, _MenuPreference], _ClpTables) | OtherReservations]) :- 
+	is_opening_time(OpeningTime),
+	is_closing_time(ClosingTime),
+	StartTime in OpeningTime..ClosingTime,
+	EndTime in OpeningTime..ClosingTime,
+	EndTime #>= StartTime,
+
 	is_menu(StandardMenu, standard),
 	is_menu(TheatreMenu, theatre),
-	( Menu #= StandardMenu ) #==> ( (EndHour - StartHour #= 2)  #/\ (StartMinute #= EndMinute) ),
-	( Menu #= TheatreMenu ) #==> ( (EndHour - StartHour #= 1)  #/\ (StartMinute #= EndMinute) ),
+	( Menu #= StandardMenu ) #==> ( EndTime - StartTime #= 120 ),
+	( Menu #= TheatreMenu ) #==> ( EndTime - StartTime #= 60 ),
+	
 	constrain_reservation_request_time(OtherReservations) .
 
 /* 
@@ -550,7 +578,7 @@ constrain_reservation_request_time([reservation_request(_Id, _Date, [StartHour, 
 
 The below code is responsible for constraining the table variables of a reservation.
 Remember that there are three tables with different capicities.
-The internal representation of a table variable is a list: [TableFor2, TableFor3, TableFor4], all boolean integers
+Remember, the internal representation of a table variable is a list: [TableFor2, TableFor3, TableFor4], all boolean integers
 */
 
 /* Constraints for reservation tables:
@@ -559,21 +587,40 @@ The internal representation of a table variable is a list: [TableFor2, TableFor3
  */
 constrain_reservation_request_table([]) .
 
-constrain_reservation_request_table([reservation_request(_Id, _Date, _StartTime, _EndTime, _TimePreference, Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservations]) :- 
+constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservations]) :- 
 	Amount in 1..9,
+	
 	TableFor2 in 0..1,
 	TableFor3 in 0..1,
 	TableFor4 in 0..1,
 	TotalSeatingCapacity #= 2*TableFor2 + 3*TableFor3 + 4*TableFor4,
 	TotalSeatingCapacity #>= Amount,
+	
 	constrain_reservation_request_table(OtherReservations) .
 
 /* 
+----------------------------------------------
+|             CLP: Double booking            |
+----------------------------------------------
+
+The below code is responsible for constraining double booking of a table.
+A table is double booked if a reservation's date and time overlapses with another reservation's date and time that has the same table assigned.
+Remember, the internal representation of a table variable is a list: [TableFor2, TableFor3, TableFor4], all boolean integers
+*/
+
+/* TODO
+ */
+constrain_reservation_request_double_booking([]) .
+
+constrain_reservation_request_double_booking([reservation_request(_Id, _Date, _StartTime, _EndTime, _TimePreference, _Amount, _Menu, [_TableFor2, _TableFor3, _TableFor4]) | OtherReservations]) :- 
+	constrain_reservation_request_double_booking(OtherReservations) .
+
+/* 
 ##################################################################
-#                          OUTPUT SYSTEM                         #
+#                        CONVERSION SYSTEM                       #
 ##################################################################
 
-The below code is responsible for processing initial SMS representation to final output
+The below code is responsible for converting between different stages of the system.
 */
 
 /* 
@@ -602,13 +649,16 @@ sms_to_nlp( [Sms | SmsRest], [Nlp | NlpRest] ) :-
 The code below is responsible for linking NLP and CLP representations.
 */
 
+
 /* Links a list of NLP representations to a list of CLP representations.
-	Id is the nth0 element location of the input NlpList */
+	Id is the nth0 element location of the input NlpList.
+	The CLP representation needs a different time notation for ease of use, whilst the NLP representation used it's time representation for ease of reading. */
 nlp_to_clp( NlpList, ClpList ) :- nlp_to_clp_iter(0, NlpList, ClpList) .
 
 nlp_to_clp_iter(_, [], []) .
 
-nlp_to_clp_iter( Id, [[[Day, Month], [StartHour, StartMinute, TimePreference], Amount, [Menu, MenuPreference]] | NlpRest], [reservation_request(Id, [Day, Month], [StartHour, StartMinute], _ClpEndTime, TimePreference, Amount, [Menu, MenuPreference], _ClpTables) | ClpRest] ) :-
+nlp_to_clp_iter( Id, [[[Day, Month], [StartHour, StartMinute, TimePreference], Amount, [Menu, MenuPreference]] | NlpRest], [reservation_request(Id, [Day, Month], [StartTime, _ClpEndTime, TimePreference], Amount, [Menu, MenuPreference], _ClpTables) | ClpRest] ) :-
+	minutes_since_midnight(StartTime, [StartHour, StartMinute]) ,
 	NewId is Id + 1,
 	nlp_to_clp_iter(NewId, NlpRest, ClpRest) .
 
