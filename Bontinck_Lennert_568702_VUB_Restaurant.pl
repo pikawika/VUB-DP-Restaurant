@@ -539,9 +539,8 @@ constrain_reservation_request_time([reservation_request(_Id, _Date, [StartHour, 
 	( EndHour #= 23 ) #==> ( EndMinute #= 0 ),
 	is_menu(StandardMenu, standard),
 	is_menu(TheatreMenu, theatre),
-	( Menu #= StandardMenu ) #==> ( EndHour - StartHour #= 2 ),
-	( Menu #= TheatreMenu ) #==> ( EndHour - StartHour #= 1 ),
-	( Menu in 1 .. 2 ) #==> ( StartMinute #= EndMinute ),
+	( Menu #= StandardMenu ) #==> ( (EndHour - StartHour #= 2)  #/\ (StartMinute #= EndMinute) ),
+	( Menu #= TheatreMenu ) #==> ( (EndHour - StartHour #= 1)  #/\ (StartMinute #= EndMinute) ),
 	constrain_reservation_request_time(OtherReservations) .
 
 /* 
