@@ -169,4 +169,8 @@ Some examples of such tests through the interpreter are given below.
       - Prints the reservations collected from the provided SMS inbox on a specified date.
       - Test query:  ```textual_print_reservations_from_provided_sms([18,3]) .```
          - Answer: prints the reservations from the provided SMS inbox on the 18th of March.
+   - ```test_textual_output_sample_XXX``` (with X in 1..8)
+      - Prints the reservations collected from the specific sample of the provided SMS inbox on a specified date.
+      - Test query: ```test_textual_output_sample_1([18,3]) .```
+         - Answer: Prints the reservations from the provided SMS inbox filter to only have first (nth1 index 1) sample on the 18th of March.
 

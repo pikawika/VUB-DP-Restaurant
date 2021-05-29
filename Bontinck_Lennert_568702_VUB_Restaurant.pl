@@ -30,8 +30,11 @@ Some things were assumed:
 
 KNOWN BUGS:
    - None of the preferences are taken account of in the contsraint system, thus everything is handled as being fixed if the variables is bound.
-      The sentences with preferrably are thus commented out from the assignment inbox.
-   - It takes a long time to perform the scheduling: XX minutes
+      - This causes a false since double booking occurs
+   - It takes a long time to perform the scheduling on the provided set
+      - Goes instantly on custom extra SMS set
+	  - Each individual case can be tested from provided set which does yield correct result
+   - ffc is used instead of an optimisation such as the wasted_space minimizer that is provided but non functional thus not used
 
 STUDENT INFO:
     - Name: Bontinck Lennert
@@ -99,12 +102,14 @@ The following code provides the pre-processed SMS inbox so that it can be easily
 /* Succeeds when its argument represents the pre-processed sms inbox provided by the assignment. */
 is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 						[please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th],
-						%[we,would,like,a,table,for,5,preferably,at,8,pm,on,18,'/',03],
+						[we,would,like,a,table,for,5,preferably,at,8,pm,on,18,'/',03],
 						[can,i,book,a,table,at,9,pm,for,2,people,on,the,18,th,of,march,for,the,standard,menu,please],
 						[reserve,us,a,table,on,march,18,for,a,party,of,4,for,the,standard,menu],
 						[9,people,on,18,th,of,march],
-						[book,6,of,us,in,on,18,march,at,20,':',00]] ) .
-						%[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) .
+						[book,6,of,us,in,on,18,march,at,20,':',00],
+						[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) .
+
+
 
 /* Succeeds when its argument represents the extra pre-processed sms inbox provided by myself to demonstrate generality. */
 is_extra_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,april],
@@ -717,7 +722,15 @@ clp_labeling(ClpList) :-
 	constrain_reservation_request_time(ClpList,VariablesForLabelingTime),
 	constrain_reservation_request_double_booking(ClpList, VariablesForLabelingDoubleBooking),
 	append([VariablesForLabelingMenu, VariablesForLabelingTable, VariablesForLabelingTime, VariablesForLabelingDoubleBooking], Variables),
+	wasted_space(ClpList, _Minimization),
 	labeling( [ffc], Variables ) .
+
+wasted_space([], _Minimization) .
+
+wasted_space([reservation_request(_Id, _Date, _Time, Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | ClpRest], Minimization) :-
+	TotalSeatingCapacity #= 2*TableFor2 + 3*TableFor3 + 4*TableFor4,
+	NewMinimization #= Minimization + (TotalSeatingCapacity - Amount),
+	wasted_space(ClpRest, NewMinimization) .
 
 /* 
 ----------------------------------------------
@@ -752,7 +765,7 @@ sms_to_reservations(Sms, Reservations) :-
 /* 
 ----------------------------------------------
 |            ALL RESERVATIONS TO DAY         |
-----------------------------------------------
+e----------------------------------------------
 
 The code below is responsible for converting a list of reservations to a list of reservations on a specific day.
 */
@@ -805,7 +818,7 @@ order_reservations_on_day(Reservations, Reservations, _Day) .
 The below code is responsible for displaying the results.
 */
 
-/* Prints the reservations of a specified date [Day, Month] in a textual manner */
+/* Prints the reservations of a specified date [Day, Month] in a textual manner. */
 textual_display_reservations_on_day(Sms, Reservations, [Day, Month]) :-
 	reservations_on_day(Reservations, ReservationsOnDay, [Day, Month]),
 	order_reservations_on_day(ReservationsOnDay, OrderedReservations, [Day, Month]),
@@ -814,7 +827,7 @@ textual_display_reservations_on_day(Sms, Reservations, [Day, Month]) :-
 	write( '\n\n' ),
 	textual_print_reservations(Sms, OrderedReservations),
 	write( '-------------------------------------------- Copyright Lennert Bontinck -------------------------------------------' ),
-	write( '\n\n' ).
+	write( '\n\n' ) .
 
 /* Prints a list of reservations in a textual manner */
 textual_print_reservations(_Sms, []) .
@@ -829,7 +842,7 @@ textual_print_reservations(Sms, [reservation(_Id, _Date,  [StartTime, EndTime, _
 	textual_print_reservations(Sms, OtherReservations) .
 
 /* Prints the reservations collected from the extra sms inbox on a specified date.
-	Uses a cut to not allow backtracking for displaying, as proposed by the assignment. */
+	Uses a cut to not allow backtracking for displaying, as proposed by the assignment.  */
 textual_print_reservations_from_extra_sms([Day, Month]) :-
 	is_extra_processed_sms_inbox( Sms ),
 	sms_to_reservations( Sms, Reservations ),
@@ -837,9 +850,26 @@ textual_print_reservations_from_extra_sms([Day, Month]) :-
 	! .
 
 /* Prints the reservations collected from the provided sms inbox on a specified date.
-	Uses a cut to not allow backtracking for displaying, as proposed by the assignment. */
+	Uses a cut to not allow backtracking for displaying, as proposed by the assignment.  */
 textual_print_reservations_from_provided_sms([Day, Month]) :-
 	is_processed_sms_inbox( Sms ),
 	sms_to_reservations( Sms, Reservations ),
 	textual_display_reservations_on_day(Sms, Reservations, [Day, Month]),
 	! .
+
+/* 
+##################################################################
+#                      TESTING OUTPUT SYSTEM                     #
+##################################################################
+
+The code below is made available for easy testing of the output system.
+*/
+
+test_textual_output_sample_1([Day, Month]) :- is_processed_sms_inbox( Sms ), nth1(1,Sms, FilteredSms), sms_to_reservations( [FilteredSms], Reservations ), textual_display_reservations_on_day([FilteredSms], Reservations, [Day, Month]), ! .
+test_textual_output_sample_2([Day, Month]) :- is_processed_sms_inbox( Sms ), nth1(2,Sms, FilteredSms), sms_to_reservations( [FilteredSms], Reservations ), textual_display_reservations_on_day([FilteredSms], Reservations, [Day, Month]), ! .
+test_textual_output_sample_3([Day, Month]) :- is_processed_sms_inbox( Sms ), nth1(3,Sms, FilteredSms), sms_to_reservations( [FilteredSms], Reservations ), textual_display_reservations_on_day([FilteredSms], Reservations, [Day, Month]), ! .
+test_textual_output_sample_4([Day, Month]) :- is_processed_sms_inbox( Sms ), nth1(4,Sms, FilteredSms), sms_to_reservations( [FilteredSms], Reservations ), textual_display_reservations_on_day([FilteredSms], Reservations, [Day, Month]), ! .
+test_textual_output_sample_5([Day, Month]) :- is_processed_sms_inbox( Sms ), nth1(5,Sms, FilteredSms), sms_to_reservations( [FilteredSms], Reservations ), textual_display_reservations_on_day([FilteredSms], Reservations, [Day, Month]), ! .
+test_textual_output_sample_6([Day, Month]) :- is_processed_sms_inbox( Sms ), nth1(6,Sms, FilteredSms), sms_to_reservations( [FilteredSms], Reservations ), textual_display_reservations_on_day([FilteredSms], Reservations, [Day, Month]), ! .
+test_textual_output_sample_7([Day, Month]) :- is_processed_sms_inbox( Sms ), nth1(7,Sms, FilteredSms), sms_to_reservations( [FilteredSms], Reservations ), textual_display_reservations_on_day([FilteredSms], Reservations, [Day, Month]), ! .
+test_textual_output_sample_8([Day, Month]) :- is_processed_sms_inbox( Sms ), nth1(8,Sms, FilteredSms), sms_to_reservations( [FilteredSms], Reservations ), textual_display_reservations_on_day([FilteredSms], Reservations, [Day, Month]), ! .
