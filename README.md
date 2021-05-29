@@ -111,20 +111,22 @@ Some examples of such tests through the interpreter are given below.
 - CONSTRAINT SYSTEM
    - ```constrain_reservation_request_menu``` (CLPFD)
       - Constraints for menu to be singular allowed menu.
-      - Test query: ```constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _Tables)]), indomain(Menu).```
-         - Answer: ```Menu = 1 ; Menu = 2.```
+      - Test query: ```constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _Tables)], VariablesForLabeling), indomain(Menu) .```
+         - Answer: ```Menu = 1, VariablesForLabeling = [1]```
+         - Backtrack: ```Menu = 2, VariablesForLabeling = [2].```
    - ```constrain_reservation_request_time``` (CLPFD)
       - Constraints for restaurant time:
          - Must be in opening hours
          - Must be long enough for menu
-      - Test query: ```constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [1, _MenuPreference], _ClpTables)]) .```
-         - Answer: ```StartTime in 1140..1260, 120+StartTime#=EndTime, EndTime in 1260..1380```
+      - Test query: ```constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [1, _MenuPreference], _ClpTables)], VariablesForLabeling) .```
+         - Answer: ```VariablesForLabeling = [StartTime, EndTime, 1], StartTime in 1140..1260, 120+StartTime#=EndTime, EndTime in 1260..1380.```
    - ```constrain_reservation_request_table``` (CLPFD)
       -  Constraints for reservation tables:
          - Tables must be able to seat all people
          - Amount of people must not exceed maximum capacity (9)
-      - Test query: ```constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, 6, _, [TableFor2, TableFor3, TableFor4])]), indomain(TableFor3) .```
-         - Answer: ```TableFor2 = TableFor4, TableFor4 = 1, TableFor3 = 0 ; TableFor3 = TableFor4, TableFor4 = 1, TableFor2 in 0..1, _10566#=2*TableFor2+7, _10566 in 7..9.```
+      -  Test query: ```constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, 6, _, [TableFor2, TableFor3, TableFor4])], VariablesForLabeling), indomain(TableFor3) .```
+         - Answer: ```TableFor2 = TableFor4, TableFor4 = 1, TableFor3 = 0, VariablesForLabeling = [6, 1, 0, 1]```
+         - Backtrack: ```TableFor3 = TableFor4, TableFor4 = 1, VariablesForLabeling = [6, TableFor2, 1, 1], TableFor2 in 0..1, _52694#=2*TableFor2+7, _52694 in 7..9.```
    - ```constrain_reservation_request_double_booking``` (CLPFD)
       - Constrains to ensure no double booking of a table can occur
       - Test query: ```constrain_reservation_request_double_booking( [reservation_request(0, [1, 4], [1200, _34966, 1], 2, [1, 2], [Table2For0, Table3For0, Table4For0]), reservation_request(1, [1, 4], [1200, _35128, 1], 4, [2, 1], [Table2For1, Table3For1, Table4For1]), reservation_request(2, [1, 4], [1200, _35290, 1], 3, [1, 1], [Table2For2, Table3For2, Table4For2])] ) . ```

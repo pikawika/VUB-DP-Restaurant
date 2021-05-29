@@ -532,16 +532,16 @@ NOTE: these constraints are a bit dull and perhaps redundant.
    - Must be a legal menu
    - Only one menu must be chosen
  */
-constrain_reservation_request_menu([]) .
+constrain_reservation_request_menu([], []) .
 
-constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _Tables) | OtherReservationRequests]) :- 
+constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _Tables) | OtherReservationRequests], [ Menu | OtherVariablesForLabeling]) :- 
 	Menu in 1..2,
 	is_menu(StandardMenu, standard),
 	is_menu(TheatreMenu, theatre),
 	( Menu #= StandardMenu ) #<==> ( StandardMenuChosen ),
 	( Menu #= TheatreMenu ) #<==> ( TheatreMenuChosen ),
 	StandardMenuChosen + TheatreMenuChosen #= 1,	
-	constrain_reservation_request_menu(OtherReservationRequests) .
+	constrain_reservation_request_menu(OtherReservationRequests, OtherVariablesForLabeling) .
 
 
 /* 
@@ -558,9 +558,9 @@ The internal representation of a time variable is a list: [Hour, Minute], both b
    - Must be in opening hours
    - Must be long enough for menu
  */
-constrain_reservation_request_time([]) .
+constrain_reservation_request_time([], []) .
 
-constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [Menu, _MenuPreference], _Tables) | OtherReservationRequests]) :- 
+constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [Menu, _MenuPreference], _Tables) | OtherReservationRequests], [ StartTime, EndTime, Menu | OtherVariablesForLabeling]) :- 
 	is_opening_time(OpeningTime),
 	is_closing_time(ClosingTime),
 	StartTime in OpeningTime..ClosingTime,
@@ -572,7 +572,7 @@ constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, 
 	( Menu #= StandardMenu ) #==> ( EndTime - StartTime #= 120 ),
 	( Menu #= TheatreMenu ) #==> ( EndTime - StartTime #= 60 ),
 	
-	constrain_reservation_request_time(OtherReservationRequests) .
+	constrain_reservation_request_time(OtherReservationRequests, OtherVariablesForLabeling) .
 
 /* 
 ----------------------------------------------
@@ -588,9 +588,9 @@ Remember, the internal representation of a table variable is a list: [TableFor2,
    - Amount of people must not exceed maximum capacity (9)
    - Tables must be able to seat all people
  */
-constrain_reservation_request_table([]) .
+constrain_reservation_request_table([], []) .
 
-constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservationRequests]) :- 
+constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservationRequests], [ Amount, TableFor2, TableFor3, TableFor4 | OtherVariablesForLabeling]) :- 
 	Amount in 1..9,
 	
 	TableFor2 in 0..1,
@@ -599,7 +599,7 @@ constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, Amou
 	TotalSeatingCapacity #= 2*TableFor2 + 3*TableFor3 + 4*TableFor4,
 	TotalSeatingCapacity #>= Amount,
 	
-	constrain_reservation_request_table(OtherReservationRequests) .
+	constrain_reservation_request_table(OtherReservationRequests, OtherVariablesForLabeling) .
 
 /* 
 ----------------------------------------------
@@ -689,3 +689,32 @@ nlp_to_clp_iter( Id, [[[Day, Month], [StartHour, StartMinute, TimePreference], A
 	minutes_since_midnight(StartTime, [StartHour, StartMinute]) ,
 	NewId is Id + 1,
 	nlp_to_clp_iter(NewId, NlpRest, ClpRest) .
+
+/* 
+----------------------------------------------
+|              CLP TO RESERVATIONS           |
+----------------------------------------------
+
+The code below is responsible for performing the labeling on the CLP representation.
+*/
+
+clp_labeling(ClpList) :-
+	constrain_reservation_request_menu(ClpList, VariablesForLabelingMenu),
+	constrain_reservation_request_table(ClpList, VariablesForLabelingTable),
+	constrain_reservation_request_time(ClpList,VariablesForLabelingTime),
+	%constrain_reservation_request_double_booking(ClpList),
+	append([VariablesForLabelingMenu, VariablesForLabelingTable, VariablesForLabelingTime], Variables),
+	labeling( [ffc], Variables ).
+
+/* 
+----------------------------------------------
+|              SMS TO RESERVATIONS           |
+----------------------------------------------
+
+The code below chains all of the above together.
+*/
+
+sms_to_reservations(Sms, Reservations) :-
+	sms_to_nlp( Sms, Nlp ),
+	nlp_to_clp( Nlp, Reservations),
+	clp_labeling(Reservations) .
