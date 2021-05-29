@@ -618,15 +618,15 @@ Remember, the internal representation of a table variable is a list: [TableFor2,
 		- Check if there are reservation that are already processed that occur on overlapping time
 		- If that is the case, constrain that tables can not be shared
  */
-constrain_reservation_request_double_booking( ReservationRequestList ) :- constrain_reservation_request_double_booking_iter([], ReservationRequestList) .
+constrain_reservation_request_double_booking( ReservationRequestList, VariablesForLabeling ) :- constrain_reservation_request_double_booking_iter([], ReservationRequestList, VariablesForLabeling) .
 
-constrain_reservation_request_double_booking_iter(_ProcessedReservationRequestList, []) .
+constrain_reservation_request_double_booking_iter(_ProcessedReservationRequestList, [], []) .
 
-constrain_reservation_request_double_booking_iter(ProcessedReservationRequestList, [reservation_request(_Id, [Day, Month], [StartTime, EndTime, _TimePreference], _Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservationRequests]) :- 
+constrain_reservation_request_double_booking_iter(ProcessedReservationRequestList, [reservation_request(_Id, [Day, Month], [StartTime, EndTime, _TimePreference], _Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservationRequests], [ Day, Month, StartTime, EndTime, TableFor2, TableFor3, TableFor4 | OtherVariablesForLabeling]) :- 
 	constrain_reservation_request_double_booking_syncer(ProcessedReservationRequestList, reservation_request(_, [Day, Month], [StartTime, EndTime, _], _, _, [TableFor2, TableFor3, TableFor4])), 
 
 	append(ProcessedReservationRequestList, [reservation_request(_, [Day, Month], [StartTime, EndTime, _], _, _, [TableFor2, TableFor3, TableFor4])], NewProcessedReservationRequestList),
-	constrain_reservation_request_double_booking_iter(NewProcessedReservationRequestList, OtherReservationRequests) .
+	constrain_reservation_request_double_booking_iter(NewProcessedReservationRequestList, OtherReservationRequests, OtherVariablesForLabeling) .
 
 
 constrain_reservation_request_double_booking_syncer([], _ReservationRequestToSync) .
@@ -702,8 +702,8 @@ clp_labeling(ClpList) :-
 	constrain_reservation_request_menu(ClpList, VariablesForLabelingMenu),
 	constrain_reservation_request_table(ClpList, VariablesForLabelingTable),
 	constrain_reservation_request_time(ClpList,VariablesForLabelingTime),
-	%constrain_reservation_request_double_booking(ClpList),
-	append([VariablesForLabelingMenu, VariablesForLabelingTable, VariablesForLabelingTime], Variables),
+	constrain_reservation_request_double_booking(ClpList, VariablesForLabelingDoubleBooking),
+	append([VariablesForLabelingMenu, VariablesForLabelingTable, VariablesForLabelingTime, VariablesForLabelingDoubleBooking], Variables),
 	labeling( [ffc], Variables ).
 
 /* 
