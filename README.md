@@ -106,14 +106,14 @@ Some examples of such tests through the interpreter are given below.
       - Constraints for restaurant time:
          - Must be in opening hours
          - Must be long enough for menu
-      - Test query: ```constrain_reservation_time([reservation(_, _, [StartHour, StartMinute], [EndHour, EndMinute], _, 1, _)]), indomain(StartHour) .```
-         - Answer: ```StartHour = 19, StartMinute = EndMinute, EndHour = 21, EndMinute in 0..60 ; [...] StartHour = 21, StartMinute = EndMinute,  ndMinute = 0, EndHour = 23. ```
+      - Test query: ```constrain_reservation_request_time([reservation_request(_Id, _Date, [StartHour, StartMinute], [EndHour, EndMinute], _TimePreference, _Amount, [1, _MenuPreference], _ClpTables)]), indomain(StartHour) .```
+         - Answer: ```StartHour = 19, StartMinute = EndMinute, EndHour = 21, EndMinute in 0..60 ; [...] StartHour = 21, StartMinute = EndMinute, EndMinute = 0, EndHour = 23. ```
    - ```constrain_reservation_table``` (CLPFD)
       -  Constraints for reservation tables:
          - Tables must be able to seat all people
          - Amount of people must not exceed maximum capacity (9)
-      - Test query: ```constrain_reservation_table([reservation(_, [Day, Month], [StartHour, StartMinute], [EndHour, EndMinute], 6, _, [TableFor2, TableFor3, TableFor4])]), indomain(TableFor2) .```
-         - Answer: ```TableFor2 = 0, TableFor3 = TableFor4, TableFor4 = 1 ; TableFor2 = TableFor4, TableFor4 = 1, TableFor3 in 0..1, _43406#=3*TableFor3+6, _43406 in 6..9.```
+      - Test query: ```constrain_reservation_request_table([reservation_request(_Id, _Date, _StarTime, _EndTime, _TimePreference, 6, _Menu, [TableFor2, TableFor3, TableFor4])]), indomain(TableFor2) .```
+         - Answer: ```TableFor2 = 0, TableFor3 = TableFor4, TableFor4 = 1 ; TableFor2 = TableFor4, TableFor4 = 1, TableFor3 in 0..1, _44798#=3*TableFor3+6, _44798 in 6..9.```
 - OUTPUT SYSTEM
    - ```sms_to_nlp``` (Prolog using NLP system)
       - Links a list of SMS messages to a list of NLP representations.
@@ -122,6 +122,6 @@ Some examples of such tests through the interpreter are given below.
             NlpRepresentation = [[[1, 4], [20, 0, 1], 2, [1, 2]], [[1, 4], [20, 0, 1], 4, [2, 1]], [[1, 4], [20, 0, 1], 3, [1, 1]]]```
    - ```nlp_to_clp``` (Prolog)
       - Links a list of NLP representations to a list of CLP representations.
-      - Test query: ```nlp_to_clp([[[1, 4], [20, 0, 1], 2, [1, 2]], [[1, 4], [20, 0, 1], 4, [2, 1]], [[1, 4], [20, 0, 1], 3, [1, 1]]], ClpRepresention) . ```
-         - Answer: ```ClpRepresention = [reservation(0, [1, 4], [20, 0], [_47508, _47514], 1, 2, [1, 2], _47480), reservation(1, [1, 4], [20, 0], [_47580, _47586], 1, 4, [2, 1], _47552), reservation(2, [1, 4], [20, 0], [_47652, _47658], 1, 3, [1, 1], _47624)]```
+      - Test query (using NLP representation of extra sms inbox): ```nlp_to_clp([[[1, 4], [20, 0, 1], 2, [1, 2]], [[1, 4], [20, 0, 1], 4, [2, 1]], [[1, 4], [20, 0, 1], 3, [1, 1]]], ClpRepresention) . ```
+         - Answer: ```ClpRepresention = [reservation_request(0, [1, 4], [20, 0], [_38042, _38048], 1, 2, [1, 2], _38014), reservation_request(1, [1, 4], [20, 0], [_38114, _38120], 1, 4, [2, 1], _38086), reservation_request(2, [1, 4], [20, 0], [_38186, _38192], 1, 3, [1, 1], _38158)]```
 

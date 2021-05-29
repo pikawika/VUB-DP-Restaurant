@@ -112,9 +112,9 @@ In our system the accepted grammers consist of a few majour parts which can be i
 
 A reservation request is a natural language sentence having the above parts from wich the following following arguments can be extracted:
    - Date: day of reservation - [Day, Month] - both integer
-   - Time: time of reservation - [Hour, Minute, Preference] - Hour and Minute are integers or _ and Preference is a constant being either fixed, preferred or unspecified
+   - Time: time of reservation - [Hour, Minute, Preference] - Hour and Minute are integers or unbounded and Preference is an integer representing preference
    - Amount: number of people - integer
-   - Menu: chosen menu - [Menu, Preference] - Menu is an integer representing the Menu and Preference is also a constant being either fixed, preferred or unspecified
+   - Menu: chosen menu - [Menu, Preference] - Menu is an integer representing the Menu and Preference is also an integer representing preference
 */
 
 reservation_request([Date, Time, Amount, Menu]) --> sentence([Date, Time, Amount, Menu] ) . 
@@ -528,19 +528,21 @@ The internal representation of a time variable is a list: [Hour, Minute], both b
    - Must be in opening hours
    - Must be long enough for menu
  */
-constrain_reservation_time([]) .
+constrain_reservation_request_time([]) .
 
-constrain_reservation_time([reservation(_, _, [StartHour, StartMinute], [EndHour, EndMinute], _, _, [Menu, MenuPreference], _) | OtherReservations]) :- 
+constrain_reservation_request_time([reservation_request(_Id, _Date, [StartHour, StartMinute], [EndHour, EndMinute], _TimePreference, _Amount, [Menu, _MenuPreference], _ClpTables) | OtherReservations]) :- 
 	StartHour in 19..23,
 	StartMinute in 0..60,
 	EndHour in 19..23,
 	EndMinute in 0..60,
 	EndHour #>= StartHour,
 	( EndHour #= 23 ) #==> ( EndMinute #= 0 ),
-	( Menu #= 1 ) #==> ( EndHour - StartHour #= 2 ),
-	( Menu #= 2 ) #==> ( EndHour - StartHour #= 1 ),
+	is_menu(StandardMenu, standard),
+	is_menu(TheatreMenu, theatre),
+	( Menu #= StandardMenu ) #==> ( EndHour - StartHour #= 2 ),
+	( Menu #= TheatreMenu ) #==> ( EndHour - StartHour #= 1 ),
 	( Menu in 1 .. 2 ) #==> ( StartMinute #= EndMinute ),
-	constrain_reservation_time(OtherReservations) .
+	constrain_reservation_request_time(OtherReservations) .
 
 /* 
 ----------------------------------------------
@@ -556,16 +558,16 @@ The internal representation of a table variable is a list: [TableFor2, TableFor3
    - Amount of people must not exceed maximum capacity (9)
    - Tables must be able to seat all people
  */
-constrain_reservation_table([]) .
+constrain_reservation_request_table([]) .
 
-constrain_reservation_table([reservation(_, _, _, _, _, Amount, _, [TableFor2, TableFor3, TableFor4]) | OtherReservations]) :- 
+constrain_reservation_request_table([reservation_request(_Id, _Date, _StartTime, _EndTime, _TimePreference, Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservations]) :- 
 	Amount in 1..9,
 	TableFor2 in 0..1,
 	TableFor3 in 0..1,
 	TableFor4 in 0..1,
 	TotalSeatingCapacity #= 2*TableFor2 + 3*TableFor3 + 4*TableFor4,
 	TotalSeatingCapacity #>= Amount,
-	constrain_reservation_table(OtherReservations) .
+	constrain_reservation_request_table(OtherReservations) .
 
 /* 
 ##################################################################
@@ -607,7 +609,7 @@ nlp_to_clp( NlpList, ClpList ) :- nlp_to_clp_iter(0, NlpList, ClpList) .
 
 nlp_to_clp_iter(_, [], []) .
 
-nlp_to_clp_iter( Id, [[[Day, Month], [StartHour, StartMinute, TimePreference], Amount, [Menu, MenuPreference]] | NlpRest], [reservation(Id, [Day, Month], [StartHour, StartMinute], [ClpEndHour, ClpEndMinute], TimePreference, Amount, [Menu, MenuPreference], ClpTables) | ClpRest] ) :-
+nlp_to_clp_iter( Id, [[[Day, Month], [StartHour, StartMinute, TimePreference], Amount, [Menu, MenuPreference]] | NlpRest], [reservation_request(Id, [Day, Month], [StartHour, StartMinute], _ClpEndTime, TimePreference, Amount, [Menu, MenuPreference], _ClpTables) | ClpRest] ) :-
 	NewId is Id + 1,
 	nlp_to_clp_iter(NewId, NlpRest, ClpRest) .
 
