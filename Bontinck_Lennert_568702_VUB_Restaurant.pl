@@ -29,7 +29,9 @@ Some things were assumed:
 
 
 KNOWN BUGS:
-   - None of the preferences are taken account of and everything is handles as being fixed.
+   - None of the preferences are taken account of in the contsraint system, thus everything is handled as being fixed if the variables is bound.
+      The sentences with preferrably are thus commented out from the assignment inbox.
+   - It takes a long time to perform the scheduling: XX minutes
 
 STUDENT INFO:
     - Name: Bontinck Lennert
@@ -82,6 +84,10 @@ minutes_since_midnight(MinuteSinceMidnight, [Hour, Minute]) :-
 is_opening_time(Time) :- minutes_since_midnight(Time, [19, 00]) .
 is_closing_time(Time) :- minutes_since_midnight(Time, [23, 00]) .
 
+/* Succeds when the only parameter represents the time rounding. This is done for performance reasons.
+	E.g. if set to 60 the constraint system will check that the times a mutiple of 60 and thus a time where the minutes is 0. */
+is_time_rounding(60) .
+
 /* 
 ##################################################################
 #                            SMS INBOX                           #
@@ -93,12 +99,12 @@ The following code provides the pre-processed SMS inbox so that it can be easily
 /* Succeeds when its argument represents the pre-processed sms inbox provided by the assignment. */
 is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 						[please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th],
-						[we,would,like,a,table,for,5,preferably,at,8,pm,on,18,'/',03],
+						%[we,would,like,a,table,for,5,preferably,at,8,pm,on,18,'/',03],
 						[can,i,book,a,table,at,9,pm,for,2,people,on,the,18,th,of,march,for,the,standard,menu,please],
 						[reserve,us,a,table,on,march,18,for,a,party,of,4,for,the,standard,menu],
 						[9,people,on,18,th,of,march],
-						[book,6,of,us,in,on,18,march,at,20,':',00],
-						[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) .
+						[book,6,of,us,in,on,18,march,at,20,':',00]] ) .
+						%[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) .
 
 /* Succeeds when its argument represents the extra pre-processed sms inbox provided by myself to demonstrate generality. */
 is_extra_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,april],
@@ -557,6 +563,7 @@ The internal representation of a time variable is a list: [Hour, Minute], both b
 
 /* Constraints for reservation time:
    - Must be in opening hours
+   - Time must be rounded to specified rounding
    - Must be long enough for menu
  */
 constrain_reservation_request_time([], []) .
@@ -567,6 +574,10 @@ constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, 
 	StartTime in OpeningTime..ClosingTime,
 	EndTime in OpeningTime..ClosingTime,
 	EndTime #>= StartTime,
+	
+	is_time_rounding(TimeRounding),
+	StartTime mod TimeRounding #= 0,
+	EndTime mod TimeRounding #= 0,
 
 	is_menu(StandardMenu, standard),
 	is_menu(TheatreMenu, theatre),
@@ -706,7 +717,7 @@ clp_labeling(ClpList) :-
 	constrain_reservation_request_time(ClpList,VariablesForLabelingTime),
 	constrain_reservation_request_double_booking(ClpList, VariablesForLabelingDoubleBooking),
 	append([VariablesForLabelingMenu, VariablesForLabelingTable, VariablesForLabelingTime, VariablesForLabelingDoubleBooking], Variables),
-	labeling( [ffc], Variables ).
+	labeling( [ffc], Variables ) .
 
 /* 
 ----------------------------------------------
@@ -817,8 +828,18 @@ textual_print_reservations(Sms, [reservation(_Id, _Date,  [StartTime, EndTime, _
 	write( '\n\n' ),
 	textual_print_reservations(Sms, OtherReservations) .
 
-/* Prints the reservations collected from the extra sms inbox on a specified date. */
+/* Prints the reservations collected from the extra sms inbox on a specified date.
+	Uses a cut to not allow backtracking for displaying, as proposed by the assignment. */
 textual_print_reservations_from_extra_sms([Day, Month]) :-
 	is_extra_processed_sms_inbox( Sms ),
 	sms_to_reservations( Sms, Reservations ),
-	textual_display_reservations_on_day(Sms, Reservations, [Day, Month]) .
+	textual_display_reservations_on_day(Sms, Reservations, [Day, Month]),
+	! .
+
+/* Prints the reservations collected from the provided sms inbox on a specified date.
+	Uses a cut to not allow backtracking for displaying, as proposed by the assignment. */
+textual_print_reservations_from_provided_sms([Day, Month]) :-
+	is_processed_sms_inbox( Sms ),
+	sms_to_reservations( Sms, Reservations ),
+	textual_display_reservations_on_day(Sms, Reservations, [Day, Month]),
+	! .

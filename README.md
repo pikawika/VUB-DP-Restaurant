@@ -119,8 +119,10 @@ Some examples of such tests through the interpreter are given below.
       - Constraints for restaurant time:
          - Must be in opening hours
          - Must be long enough for menu
-      - Test query: ```constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [1, _MenuPreference], _ClpTables)], VariablesForLabeling) .```
-         - Answer: ```VariablesForLabeling = [StartTime, EndTime, 1], StartTime in 1140..1260, 120+StartTime#=EndTime, EndTime in 1260..1380.```
+      - Test query: ```constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [1, _MenuPreference], _ClpTables)], VariablesForLabeling), indomain(StartTime) .```
+         - Answer: ```StartTime = 1140, EndTime = 1260, VariablesForLabeling = [1140, 1260, 1]```
+         - Backtrack: ```StartTime = 1200, EndTime = 1320, VariablesForLabeling = [1200, 1320, 1]```
+         - Backtrack: ```StartTime = 1260, EndTime = 1380, VariablesForLabeling = [1260, 1380, 1].```
    - ```constrain_reservation_request_table``` (CLPFD)
       -  Constraints for reservation tables:
          - Tables must be able to seat all people
@@ -163,4 +165,8 @@ Some examples of such tests through the interpreter are given below.
       - Prints the reservations collected from the extra SMS inbox on a specified date.
       - Test query:  ```textual_print_reservations_from_extra_sms([1,4]) .```
          - Answer: prints the reservations from the extra SMS inbox on the first of April.
+   - ```textual_print_reservations_from_provided_sms```
+      - Prints the reservations collected from the provided SMS inbox on a specified date.
+      - Test query:  ```textual_print_reservations_from_provided_sms([18,3]) .```
+         - Answer: prints the reservations from the provided SMS inbox on the 18th of March.
 
