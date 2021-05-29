@@ -65,6 +65,11 @@ Some global queries to ensure uniformity.
 is_menu(1, standard) .
 is_menu(2, theatre) .
 
+/* Allows to represent preference as integer */
+is_preference(1, fixed) .
+is_preference(2, preferred) .
+is_preference(3, unspecified) .
+
 /* 
 ##################################################################
 #                            SMS INBOX                           #
@@ -84,8 +89,9 @@ is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 						[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) .
 
 /* Succeeds when its argument represents the extra pre-processed sms inbox provided by myself to demonstrate generality. */
-is_extra_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,march],
-								[hi,can,i,book,a,place,for,2, persons,on,the,first,of,march]] ) .
+is_extra_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,april],
+								[hi,can,i,book,a,place,at,8,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please],
+								[table,for,3,at,8,pm,on,the,first,of,april,for,the,standard,menu,please]] ) .
 
 
 /* 
@@ -108,7 +114,7 @@ A reservation request is a natural language sentence having the above parts from
    - Date: day of reservation - [Day, Month] - both integer
    - Time: time of reservation - [Hour, Minute, Preference] - Hour and Minute are integers or _ and Preference is a constant being either fixed, preferred or unspecified
    - Amount: number of people - integer
-   - Menu: chosen menu - [Menu, Preference] - Menu is a constant being either standard, theatre or _ and Preference is also a constant being either fixed, preferred or unspecified
+   - Menu: chosen menu - [Menu, Preference] - Menu is an integer representing the Menu and Preference is also a constant being either fixed, preferred or unspecified
 */
 
 reservation_request([Date, Time, Amount, Menu]) --> sentence([Date, Time, Amount, Menu] ) . 
@@ -297,9 +303,9 @@ month(Month) --> [StringMonth], { StringMonth = december, Month = 12} .
 */
 
 /* Succeeds when the parameter (Time = [Hour, Minute, Preference]) is equal to the parsed textual time description. */
-time_description([Hour, Minute, fixed]) --> [at], time([Hour, Minute]) .
-time_description([Hour, Minute, preferred]) --> preference, [at], time([Hour, Minute])  .
-no_time_description([_, _, unspecified]) --> [] .
+time_description([Hour, Minute, Preference]) --> [at], time([Hour, Minute]), {is_preference(Preference, fixed)} .
+time_description([Hour, Minute, Preference]) --> preference, [at], time([Hour, Minute]), {is_preference(Preference, preferred)} .
+no_time_description([_, _, Preference]) --> [], {is_preference(Preference, unspecified)} .
 
 /* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed 24 hour time representation (e.g. 14:00). */
 time([Hour, Minute]) --> hour(Hour), [':'], minute(Minute) .
@@ -352,18 +358,19 @@ amount(Amount) --> positive_integer(Amount) .
 */
 
 /* Succeeds when the parameter (Menu) is equal to the parsed textual menu description. */
-menu_description([Menu, fixed]) --> [for], article, menu(Menu), [menu] .
-menu_description([Menu, preferred]) --> preference, [for], article, menu(Menu), [menu] .
+menu_description([Menu, Preference]) --> [for], article, menu(Menu), [menu], {is_preference(Preference, fixed)} .
+menu_description([Menu, Preference]) --> preference, [for], article, menu(Menu), [menu], {is_preference(Preference, preferred)} .
 
-menu_description([Menu, fixed]) --> [for], menu(Menu), [menu] .
-menu_description([Menu, preferred]) --> preference, [for], menu(Menu), [menu] .
+menu_description([Menu, Preference]) --> [for], menu(Menu), [menu], {is_preference(Preference, fixed)} .
+menu_description([Menu, Preference]) --> preference, [for], menu(Menu), [menu], {is_preference(Preference, preferred)} .
 
-no_menu_description([_, unspecified]) --> [] .
+/* If no menu is specified, the standard menu is presupposed but not fixed */
+no_menu_description([Menu, Preference]) --> [], {is_menu(Menu, standard), is_preference(Preference, preferred)} .
 
 /* Succeeds when the parameter (Menu) is equal to the textual representation of an allowed menu.
 	This abstraction makes it easier to add more menus down the line. */
-menu(Menu) --> [Menu], {Menu = theatre} .
-menu(Menu) --> [Menu], {Menu = standard} .
+menu(Menu) --> [RawMenu], {RawMenu = theatre, is_menu(Menu, RawMenu)} .
+menu(Menu) --> [RawMenu], {RawMenu = standard, is_menu(Menu, RawMenu) } .
 
 /* 
 ----------------------------------------------
@@ -458,6 +465,7 @@ test_dcg_sample_8(Result) :- is_processed_sms_inbox(List), nth1(8,List,Sample), 
 
 test_dcg_sample_extra_1(Result) :- is_extra_processed_sms_inbox(List), nth1(1,List,Sample), reservation_request( Result, Sample, []) .
 test_dcg_sample_extra_2(Result) :- is_extra_processed_sms_inbox(List), nth1(2,List,Sample), reservation_request( Result, Sample, []) .
+test_dcg_sample_extra_3(Result) :- is_extra_processed_sms_inbox(List), nth1(3,List,Sample), reservation_request( Result, Sample, []) .
 
 test_dcg_sample_all() :- 
 	test_dcg_sample_1( _ ),
@@ -469,7 +477,8 @@ test_dcg_sample_all() :-
    	test_dcg_sample_7( _ ),
    	test_dcg_sample_8( _ ),
    	test_dcg_sample_extra_1( _ ),
-   	test_dcg_sample_extra_2( _ ) .
+   	test_dcg_sample_extra_2( _ ),
+   	test_dcg_sample_extra_3( _ ) .
 
 /* 
 ##################################################################
@@ -487,8 +496,10 @@ A reservation is represented as [Id, Date, StartTime, Endtime, Amount, Menu, Tab
    - StartTime: time the customer is expected to come - [Hour, Minute], both integer
    - EndTime: time the customer is expected to leave - [Hour, Minute], both integer
       - Note: this is in a way redundant but easy to have
+   - TimePreference: preference of time slot - integer
    - Amount: number of people that have made a reservation - integer
    - Menu: menu for group - integer
+   - MenuPreference: preference of chosen menu - integer
    - Tables: assigned tables for group - [TableFor2, TableFor3, TableFor4], all boolean integers
 
 The following concepts are constraint:
@@ -519,7 +530,7 @@ The internal representation of a time variable is a list: [Hour, Minute], both b
  */
 constrain_reservation_time([]) .
 
-constrain_reservation_time([reservation(_, _, [StartHour, StartMinute], [EndHour, EndMinute], _, Menu, _) | OtherReservations]) :- 
+constrain_reservation_time([reservation(_, _, [StartHour, StartMinute], [EndHour, EndMinute], _, _, [Menu, MenuPreference], _) | OtherReservations]) :- 
 	StartHour in 19..23,
 	StartMinute in 0..60,
 	EndHour in 19..23,
@@ -547,7 +558,7 @@ The internal representation of a table variable is a list: [TableFor2, TableFor3
  */
 constrain_reservation_table([]) .
 
-constrain_reservation_table([reservation(_, _, _, _, Amount, _, [TableFor2, TableFor3, TableFor4]) | OtherReservations]) :- 
+constrain_reservation_table([reservation(_, _, _, _, _, Amount, _, [TableFor2, TableFor3, TableFor4]) | OtherReservations]) :- 
 	Amount in 1..9,
 	TableFor2 in 0..1,
 	TableFor3 in 0..1,
@@ -555,3 +566,48 @@ constrain_reservation_table([reservation(_, _, _, _, Amount, _, [TableFor2, Tabl
 	TotalSeatingCapacity #= 2*TableFor2 + 3*TableFor3 + 4*TableFor4,
 	TotalSeatingCapacity #>= Amount,
 	constrain_reservation_table(OtherReservations) .
+
+/* 
+##################################################################
+#                          OUTPUT SYSTEM                         #
+##################################################################
+
+The below code is responsible for processing initial SMS representation to final output
+*/
+
+/* 
+----------------------------------------------
+|                  SMS TO NLP                |
+----------------------------------------------
+
+The code below is responsible for linking SLS and NLP representations.
+
+
+*/
+
+/* Links a list of SMS messages to a list of NLP representations. */
+sms_to_nlp( [], [] ) .
+
+sms_to_nlp( [Sms | SmsRest], [Nlp | NlpRest] ) :-
+	reservation_request( Nlp, Sms, []),
+	sms_to_nlp(SmsRest, NlpRest) .
+
+
+/* 
+----------------------------------------------
+|                  NLP TO CLP                |
+----------------------------------------------
+
+The code below is responsible for linking NLP and CLP representations.
+*/
+
+/* Links a list of NLP representations to a list of CLP representations.
+	Id is the nth0 element location of the input NlpList */
+nlp_to_clp( NlpList, ClpList ) :- nlp_to_clp_iter(0, NlpList, ClpList) .
+
+nlp_to_clp_iter(_, [], []) .
+
+nlp_to_clp_iter( Id, [[[Day, Month], [StartHour, StartMinute, TimePreference], Amount, [Menu, MenuPreference]] | NlpRest], [reservation(Id, [Day, Month], [StartHour, StartMinute], [ClpEndHour, ClpEndMinute], TimePreference, Amount, [Menu, MenuPreference], ClpTables) | ClpRest] ) :-
+	NewId is Id + 1,
+	nlp_to_clp_iter(NewId, NlpRest, ClpRest) .
+

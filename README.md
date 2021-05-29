@@ -78,25 +78,27 @@ Some examples of such tests through the interpreter are given below.
    -  ```reservation_request``` and thus ```sentence```  (DCG)
       - To test these an easy 1 liner is made
       - Test query: ```test_dcg_sample_1( Result ) .```
-         - Answer: ```Result = [[18, 3], [20, 0, fixed], 2, [_8516, unspecified]]```
+         - Answer: ```Result = [[18, 3], [20, 0, 1], 2, [1, 2]]```
       - Test query: ```test_dcg_sample_2( Result ) .```
-         - Answer: ```Result = [[18, 3], [_10052, _10058, unspecified], 3, [theatre, fixed]]```
+         - Answer: ```Result = [[18, 3], [_46754, _46760, 3], 3, [2, 1]]```
       - Test query: ```test_dcg_sample_3( Result ) .```
-         - Answer: ```Result = [[18, 3], [20, 0, preferred], 5, [_11612, unspecified]]```
+         - Answer: ```Result = [[18, 3], [20, 0, 2], 5, [1, 2]]```
       - Test query: ```test_dcg_sample_4( Result ) .```
-         - Answer: ```Result = [[18, 3], [21, 0, fixed], 2, [standard, fixed]]```
+         - Answer: ```[[18, 3], [21, 0, 1], 2, [1, 1]]```
       - Test query: ```test_dcg_sample_5( Result ) .```
-         - Answer: ```Result = [[18, 3], [_14744, _14750, unspecified], 4, [standard, fixed]] ;```
+         - Answer: ```Result = [[18, 3], [_54644, _54650, 3], 4, [1, 1]]```
       - Test query: ```test_dcg_sample_6( Result ) .```
-         - Answer: ```Result = [[18, 3], [_17768, _17774, unspecified], 9, [_17756, unspecified]]```
+         - Answer: ```Result = [[18, 3], [_57262, _57268, 3], 9, [1, 2]]```
       - Test query: ```test_dcg_sample_7( Result ) .```
-         - Answer: ```Result = [[18, 3], [20, 0, fixed], 6, [_19304, unspecified]]```
+         - Answer: ```Result = [[18, 3], [20, 0, 1], 6, [1, 2]]```
       - Test query: ```test_dcg_sample_8( Result ) .```
-         - Answer: ```Result = [[18, 3], [19, 0, fixed], 7, [standard, preferred]```
+         - Answer: ```Result = [[18, 3], [19, 0, 1], 7, [1, 2]]```
       - Test query: ```test_dcg_sample_extra_1( Result ) .```
-         - Answer: ```Result = [[1, 3], [20, 0, fixed], 2, [_1878, unspecified]]```
+         - Answer: ```Result = [[1, 4], [20, 0, 1], 2, [1, 2]]```
       - Test query: ```test_dcg_sample_extra_2( Result ) .```
-         - Answer: ```Result = [[1, 3], [_4024, _4030, unspecified], 2, [_4012, unspecified]]```
+         - Answer: ```Result = [[1, 4], [20, 0, 1], 4, [2, 1]]```
+      - Test query: ```test_dcg_sample_extra_3( Result ) .```
+         - Answer: ```Result = [[1, 4], [20, 0, 1], 3, [1, 1]]```
       - Test query: ```test_dcg_sample_all() .```
          - Answer: ```true```
 - CONSTRAINT SYSTEM
@@ -112,3 +114,14 @@ Some examples of such tests through the interpreter are given below.
          - Amount of people must not exceed maximum capacity (9)
       - Test query: ```constrain_reservation_table([reservation(_, [Day, Month], [StartHour, StartMinute], [EndHour, EndMinute], 6, _, [TableFor2, TableFor3, TableFor4])]), indomain(TableFor2) .```
          - Answer: ```TableFor2 = 0, TableFor3 = TableFor4, TableFor4 = 1 ; TableFor2 = TableFor4, TableFor4 = 1, TableFor3 in 0..1, _43406#=3*TableFor3+6, _43406 in 6..9.```
+- OUTPUT SYSTEM
+   - ```sms_to_nlp``` (Prolog using NLP system)
+      - Links a list of SMS messages to a list of NLP representations.
+      - Test query: ```is_extra_processed_sms_inbox(Inbox), sms_to_nlp(Inbox, NlpRepresentation) . ```
+         - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on, the, first, of, april], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, april, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, april, for, the, standard, menu, please]],
+            NlpRepresentation = [[[1, 4], [20, 0, 1], 2, [1, 2]], [[1, 4], [20, 0, 1], 4, [2, 1]], [[1, 4], [20, 0, 1], 3, [1, 1]]]```
+   - ```nlp_to_clp``` (Prolog)
+      - Links a list of NLP representations to a list of CLP representations.
+      - Test query: ```nlp_to_clp([[[1, 4], [20, 0, 1], 2, [1, 2]], [[1, 4], [20, 0, 1], 4, [2, 1]], [[1, 4], [20, 0, 1], 3, [1, 1]]], ClpRepresention) . ```
+         - Answer: ```ClpRepresention = [reservation(0, [1, 4], [20, 0], [_47508, _47514], 1, 2, [1, 2], _47480), reservation(1, [1, 4], [20, 0], [_47580, _47586], 1, 4, [2, 1], _47552), reservation(2, [1, 4], [20, 0], [_47652, _47658], 1, 3, [1, 1], _47624)]```
+
