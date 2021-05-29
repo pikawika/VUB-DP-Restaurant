@@ -29,7 +29,7 @@ Some things were assumed:
 
 
 KNOWN BUGS:
-   - Table does not check double assign.
+   - None of the preferences are taken account of and everything is handles as being fixed.
 
 STUDENT INFO:
     - Name: Bontinck Lennert
@@ -698,6 +698,7 @@ nlp_to_clp_iter( Id, [[[Day, Month], [StartHour, StartMinute, TimePreference], A
 The code below is responsible for performing the labeling on the CLP representation.
 */
 
+/* Performs labeling using FFC and all constraints for the input list which is a CLP representation */
 clp_labeling(ClpList) :-
 	constrain_reservation_request_menu(ClpList, VariablesForLabelingMenu),
 	constrain_reservation_request_table(ClpList, VariablesForLabelingTable),
@@ -714,7 +715,15 @@ clp_labeling(ClpList) :-
 The code below chains all of the above together.
 */
 
+/* Unifies SMS inbox with the made reservations */
 sms_to_reservations(Sms, Reservations) :-
 	sms_to_nlp( Sms, Nlp ),
-	nlp_to_clp( Nlp, Reservations),
-	clp_labeling(Reservations) .
+	nlp_to_clp( Nlp, ReservationRequests),
+	clp_labeling(ReservationRequests),
+	reservationrequests_to_reservation(ReservationRequests, Reservations).
+
+/* Converts reservation requests to reservation by removing leading term */
+reservationrequests_to_reservation([], []) .
+
+reservationrequests_to_reservation([reservation_request(Id, Date, Time, Amount, Menu, Tables) | OtherReservationRequests], [reservation(Id, Date, Time, Amount, Menu, Tables) | OtherReservations]) :-
+	reservationrequests_to_reservation(OtherReservationRequests, OtherReservations) .
