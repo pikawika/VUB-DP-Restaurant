@@ -316,7 +316,7 @@ month(Month) --> [StringMonth], { StringMonth = december, Month = 12} .
 /* Succeeds when the parameter (Time = [Hour, Minute, Preference]) is equal to the parsed textual time description. */
 time_description([Hour, Minute, Preference]) --> [at], time([Hour, Minute]), {is_preference(Preference, fixed)} .
 time_description([Hour, Minute, Preference]) --> preference, [at], time([Hour, Minute]), {is_preference(Preference, preferred)} .
-no_time_description([_, _, Preference]) --> [], {is_preference(Preference, unspecified)} .
+no_time_description([_Hour, _Minute, Preference]) --> [], {is_preference(Preference, unspecified)} .
 
 /* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed 24 hour time representation (e.g. 14:00). */
 time([Hour, Minute]) --> hour(Hour), [':'], minute(Minute) .
@@ -534,14 +534,14 @@ NOTE: these constraints are a bit dull and perhaps redundant.
  */
 constrain_reservation_request_menu([]) .
 
-constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _Tables) | OtherReservations]) :- 
+constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _Tables) | OtherReservationRequests]) :- 
 	Menu in 1..2,
 	is_menu(StandardMenu, standard),
 	is_menu(TheatreMenu, theatre),
-	( Menu #= StandardMenu ) #==> ( StandardMenuChosen ),
-	( Menu #= TheatreMenu ) #==> ( TheatreMenuChosen ),
+	( Menu #= StandardMenu ) #<==> ( StandardMenuChosen ),
+	( Menu #= TheatreMenu ) #<==> ( TheatreMenuChosen ),
 	StandardMenuChosen + TheatreMenuChosen #= 1,	
-	constrain_reservation_request_menu(OtherReservations) .
+	constrain_reservation_request_menu(OtherReservationRequests) .
 
 
 /* 
@@ -560,7 +560,7 @@ The internal representation of a time variable is a list: [Hour, Minute], both b
  */
 constrain_reservation_request_time([]) .
 
-constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [Menu, _MenuPreference], _Tables) | OtherReservations]) :- 
+constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [Menu, _MenuPreference], _Tables) | OtherReservationRequests]) :- 
 	is_opening_time(OpeningTime),
 	is_closing_time(ClosingTime),
 	StartTime in OpeningTime..ClosingTime,
@@ -572,7 +572,7 @@ constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, 
 	( Menu #= StandardMenu ) #==> ( EndTime - StartTime #= 120 ),
 	( Menu #= TheatreMenu ) #==> ( EndTime - StartTime #= 60 ),
 	
-	constrain_reservation_request_time(OtherReservations) .
+	constrain_reservation_request_time(OtherReservationRequests) .
 
 /* 
 ----------------------------------------------
@@ -590,7 +590,7 @@ Remember, the internal representation of a table variable is a list: [TableFor2,
  */
 constrain_reservation_request_table([]) .
 
-constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservations]) :- 
+constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservationRequests]) :- 
 	Amount in 1..9,
 	
 	TableFor2 in 0..1,
@@ -599,7 +599,7 @@ constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, Amou
 	TotalSeatingCapacity #= 2*TableFor2 + 3*TableFor3 + 4*TableFor4,
 	TotalSeatingCapacity #>= Amount,
 	
-	constrain_reservation_request_table(OtherReservations) .
+	constrain_reservation_request_table(OtherReservationRequests) .
 
 /* 
 ----------------------------------------------
@@ -611,12 +611,37 @@ A table is double booked if a reservation's date and time overlapses with anothe
 Remember, the internal representation of a table variable is a list: [TableFor2, TableFor3, TableFor4], all boolean integers
 */
 
-/* TODO
+/* In order to prevent double booking a double iterative process is performed:
+	- First loop (constrain_reservation_request_double_booking_iter):
+		- Initiate second loop with "already processed" reservation untill then
+	- Second loop (constrain_reservation_request_double_booking_syncer):
+		- Check if there are reservation that are already processed that occur on overlapping time
+		- If that is the case, constrain that tables can not be shared
  */
-constrain_reservation_request_double_booking([]) .
+constrain_reservation_request_double_booking( ReservationRequestList ) :- constrain_reservation_request_double_booking_iter([], ReservationRequestList) .
 
-constrain_reservation_request_double_booking([reservation_request(_Id, _Date, _StartTime, _EndTime, _TimePreference, _Amount, _Menu, [_TableFor2, _TableFor3, _TableFor4]) | OtherReservations]) :- 
-	constrain_reservation_request_double_booking(OtherReservations) .
+constrain_reservation_request_double_booking_iter(_ProcessedReservationRequestList, []) .
+
+constrain_reservation_request_double_booking_iter(ProcessedReservationRequestList, [reservation_request(_Id, [Day, Month], [StartTime, EndTime, _TimePreference], _Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservationRequests]) :- 
+	constrain_reservation_request_double_booking_syncer(ProcessedReservationRequestList, reservation_request(_, [Day, Month], [StartTime, EndTime, _], _, _, [TableFor2, TableFor3, TableFor4])), 
+
+	append(ProcessedReservationRequestList, [reservation_request(_, [Day, Month], [StartTime, EndTime, _], _, _, [TableFor2, TableFor3, TableFor4])], NewProcessedReservationRequestList),
+	constrain_reservation_request_double_booking_iter(NewProcessedReservationRequestList, OtherReservationRequests) .
+
+
+constrain_reservation_request_double_booking_syncer([], _ReservationRequestToSync) .
+
+constrain_reservation_request_double_booking_syncer([reservation_request(_, [Day, Month], [StartTime, EndTime, _], _, _, [TableFor2, TableFor3, TableFor4]) | OtherReservationRequests ], reservation_request(_, [DayOfSync, MonthOfSync], [StartTimeOfSync, EndTimeOfSync, _], _, _, [TableFor2OfSync, TableFor3OfSync, TableFor4OfSync])) :-
+	( Month #= MonthOfSync ) #<==> EqualMonth,
+	( Day #= DayOfSync ) #<==> EqualDay,
+	( StartTime #>= StartTimeOfSync #/\ StartTime #< EndTimeOfSync ) #<==> StartTimeOverlap,
+	( EndTime #> StartTimeOfSync #/\ EndTime #=< EndTimeOfSync ) #<==> EndTimeOverlap,
+	( EqualMonth #/\ EqualDay #/\ (StartTimeOverlap #\/ EndTimeOverlap) ) #<==> Overlap,
+
+	( Overlap #/\ TableFor2 #= 1 ) #==> ( TableFor2 #\= TableFor2OfSync),
+	( Overlap #/\ TableFor3 #= 1 ) #==> ( TableFor3 #\= TableFor3OfSync),
+	( Overlap #/\ TableFor4 #= 1 ) #==> ( TableFor4 #\= TableFor4OfSync),
+	constrain_reservation_request_double_booking_syncer(OtherReservationRequests, reservation_request(_, [DayOfSync, MonthOfSync], [StartTimeOfSync, EndTimeOfSync, _], _, _, [TableFor2OfSync, TableFor3OfSync, TableFor4OfSync])).
 
 /* 
 ##################################################################
@@ -655,13 +680,12 @@ The code below is responsible for linking NLP and CLP representations.
 
 /* Links a list of NLP representations to a list of CLP representations.
 	Id is the nth0 element location of the input NlpList.
-	The CLP representation needs a different time notation for ease of use, whilst the NLP representation used it's time representation for ease of reading. */
+	The CLP representation needs a different time notation for ease of use (minutes since midnight), whilst the NLP representation used its time representation for ease of reading (24 hour representation). */
 nlp_to_clp( NlpList, ClpList ) :- nlp_to_clp_iter(0, NlpList, ClpList) .
 
-nlp_to_clp_iter(_, [], []) .
+nlp_to_clp_iter(_Id, [], []) .
 
 nlp_to_clp_iter( Id, [[[Day, Month], [StartHour, StartMinute, TimePreference], Amount, [Menu, MenuPreference]] | NlpRest], [reservation_request(Id, [Day, Month], [StartTime, _ClpEndTime, TimePreference], Amount, [Menu, MenuPreference], _ClpTables) | ClpRest] ) :-
 	minutes_since_midnight(StartTime, [StartHour, StartMinute]) ,
 	NewId is Id + 1,
 	nlp_to_clp_iter(NewId, NlpRest, ClpRest) .
-
