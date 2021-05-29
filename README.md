@@ -165,6 +165,9 @@ Some examples of such tests through the interpreter are given below.
       - Prints the reservations collected from the extra SMS inbox on a specified date.
       - Test query:  ```textual_print_reservations_from_extra_sms([1,4]) .```
          - Answer: prints the reservations from the extra SMS inbox on the first of April.
+            - At 20h0, 2 people will arive. They will have the standard menu and sit at the table for two. They will leave at 22h0.
+            - At 20h0, 4 people will arive. They will have the theatre menu and sit at the table for four. They will leave at 21h0.
+            - At 20h0, 3 people will arive. They will have the standard menu and sit at the table for three. They will leave at 22h0.
    - ```textual_print_reservations_from_provided_sms```
       - Prints the reservations collected from the provided SMS inbox on a specified date.
       - Test query:  ```textual_print_reservations_from_provided_sms([18,3]) .```

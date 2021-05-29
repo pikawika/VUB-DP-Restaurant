@@ -29,12 +29,15 @@ Some things were assumed:
 
 
 KNOWN BUGS:
-   - None of the preferences are taken account of in the contsraint system, thus everything is handled as being fixed if the variables is bound.
+   - The constraint system does not used the "preference" information extracted by the NLP
+      - Thus all bounded menu's and times are seen as "fixed"
       - This causes a false since double booking occurs
-   - It takes a long time to perform the scheduling on the provided set
+   - It takes a long time to perform the scheduling on the provided set (when disabling the preffered entries from the given sms inbox due to above bug)
       - Goes instantly on custom extra SMS set
-	  - Each individual case can be tested from provided set which does yield correct result
-   - ffc is used instead of an optimisation such as the wasted_space minimizer that is provided but non functional thus not used
+	  - Each individual case can be tested from provided set which does yield correct result -> see tests given as test_textual_output_sample_XXX methods (e.g. test_textual_output_sample_1)
+   - ffc is used instead of an optimisation such as the wasted_space minimizer that is provided but non functional due to non ground error.
+
+   --> All of these errors are related to the constraint system which works for the extra given samples. I hope this is taken into consideration when marking the other components of the system that do seem to work completely.
 
 STUDENT INFO:
     - Name: Bontinck Lennert
