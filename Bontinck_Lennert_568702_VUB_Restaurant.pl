@@ -1,7 +1,7 @@
 /*Single loadable file for the Restaurant assignment.
 
 The GitHub repository for this project is available at: https://github.com/pikawika/VUB-DP-Restaurant.
-    It will be made public once the deadline of the assignment has passed to ensure it isn't fraudulently used by colleague students.
+    To ensure it isn't fraudulently used by colleague students please send a request via email to join this repo.
 
 The created code was tested on an incremental basis through the interpreter.
    - The README.md file contains these test queries used in the interpreter.
@@ -35,6 +35,7 @@ STUDENT INFO:
     - Name: Bontinck Lennert
     - Student ID: 568702
     - Affiliation: VUB - Master Computer Science: AI 
+	- Email: lennert.bontinck@vub.be
 */
 
 /* 
@@ -709,10 +710,24 @@ clp_labeling(ClpList) :-
 
 /* 
 ----------------------------------------------
-|              SMS TO RESERVATIONS           |
+|    RESERVATION REQUESTS TO RESERVATIONS    |
 ----------------------------------------------
 
-The code below chains all of the above together.
+The code below is responsible for converting reservation requests to reservation, note that this does nothing more then changing the leading term.
+*/
+
+/* Converts reservation requests to reservation by changing leading term */
+reservationrequests_to_reservation([], []) .
+
+reservationrequests_to_reservation([reservation_request(Id, Date, Time, Amount, Menu, Tables) | OtherReservationRequests], [reservation(Id, Date, Time, Amount, Menu, Tables) | OtherReservations]) :-
+	reservationrequests_to_reservation(OtherReservationRequests, OtherReservations) .
+
+/* 
+----------------------------------------------
+|             SMS TO RESERVATIONS            |
+----------------------------------------------
+
+The code below is responsible for converting the initial SMS list to a list of reservations
 */
 
 /* Unifies SMS inbox with the made reservations */
@@ -722,8 +737,33 @@ sms_to_reservations(Sms, Reservations) :-
 	clp_labeling(ReservationRequests),
 	reservationrequests_to_reservation(ReservationRequests, Reservations).
 
-/* Converts reservation requests to reservation by removing leading term */
-reservationrequests_to_reservation([], []) .
 
-reservationrequests_to_reservation([reservation_request(Id, Date, Time, Amount, Menu, Tables) | OtherReservationRequests], [reservation(Id, Date, Time, Amount, Menu, Tables) | OtherReservations]) :-
-	reservationrequests_to_reservation(OtherReservationRequests, OtherReservations) .
+/* 
+----------------------------------------------
+|            ALL RESERVATIONS TO DAY         |
+----------------------------------------------
+
+The code below is responsible for converting a list of reservations to a list of reservations on a specific day.
+*/
+
+/* Unifies a list of reservations with reservations made on a particular day */
+reservations_on_day([], [], _Date) .
+
+reservations_on_day([reservation(Id, [Day, Month], Time, Amount, Menu, Tables) | OtherReservations], [reservation(Id, [Day, Month], Time, Amount, Menu, Tables) | OtherReservationsOnDay], [Day, Month]) :-
+	reservations_on_day(OtherReservations, OtherReservationsOnDay, [Day, Month]) .
+
+reservations_on_day([reservation(_, [DayNotMatched, MonthNothEqual], _, _, _, _) | OtherReservations], OtherReservationsOnDay, [Day, Month]) :-
+	( DayNotMatched \= Day ; MonthNothEqual \= Month ),
+	reservations_on_day(OtherReservations, OtherReservationsOnDay, [Day, Month]) .
+
+/* 
+##################################################################
+#                          DISPLAY SYSTEM                        #
+##################################################################
+
+The below code is responsible for displaying the results.
+*/
+
+/* The below code represents the reservations in a textual manner */
+
+

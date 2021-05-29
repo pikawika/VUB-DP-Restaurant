@@ -12,6 +12,7 @@
 - **Name**: Bontinck Lennert
 - **Student ID**: 568702
 - **Affiliation**: VUB - Master Computer Science: AI
+- **Email**: lennert.bontinck@vub.be
 
 ## Used software
 - [Visual Studio code](https://code.visualstudio.com/Download) with [VSC-Prolog plugin](https://marketplace.visualstudio.com/items?itemName=arthurwang.vsc-prolog)
@@ -143,8 +144,14 @@ Some examples of such tests through the interpreter are given below.
       - Test query: ```nlp_to_clp([[[1, 4], [20, 0, 1], 2, [1, 2]], [[1, 4], [20, 0, 1], 4, [2, 1]], [[1, 4], [20, 0, 1], 3, [1, 1]]], ClpRepresention) . ```
          - Answer: ```ClpRepresention = [reservation_request(0, [1, 4], [1200, _34966, 1], 2, [1, 2], _34944), reservation_request(1, [1, 4], [1200, _35128, 1], 4, [2, 1], _35106), reservation_request(2, [1, 4], [1200, _35290, 1], 3, [1, 1], _35268)]```
    - ```sms_to_reservations```
-      - Unifies SMS inbox with the made reservations, chains together other conversions
+      - Unifies SMS inbox with the made reservations, chains together other conversions.
       - Test query: ```is_extra_processed_sms_inbox( Sms ), sms_to_reservations( Sms, Reservations ) .```
          - Answer: ```Sms = [[table, for, 2, at, 20, :, 0, on, the, first, of, april], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, april, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, april, for, the, standard, menu, please]],```
             ```Reservations = [reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])] ```
+   - ```reservations_on_day```
+      - Unifies a list of reservations with reservations made on a particular day.
+      - Test query: ```reservations_on_day([reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])], ReservationsOnDay, [2, 4]) .```
+         - Answer: ```ReservationsOnDay = []```
+      - Test query: ```reservations_on_day([reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])], ReservationsOnDay, [1, 4]) .```
+         - Answer: ```ReservationsOnDay = [reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])]```
 
