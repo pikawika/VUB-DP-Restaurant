@@ -154,4 +154,13 @@ Some examples of such tests through the interpreter are given below.
          - Answer: ```ReservationsOnDay = []```
       - Test query: ```reservations_on_day([reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])], ReservationsOnDay, [1, 4]) .```
          - Answer: ```ReservationsOnDay = [reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])]```
+- OUTPUT SYSTEM
+   - ```textual_display_reservations_on_day```
+      - Prints the reservations of a specified date [Day, Month] in a textual manner
+      - Test query: ```is_extra_processed_sms_inbox( Sms ), sms_to_reservations( Sms, Reservations ), textual_display_reservations_on_day(Sms, Reservations, [1,4]) .```
+         - Answer: prints the reservations from the extra SMS inbox on the first of April.
+   - ```textual_print_reservations_from_extra_sms```
+      - Prints the reservations collected from the extra SMS inbox on a specified date.
+      - Test query:  ```textual_print_reservations_from_extra_sms([1,4]) .```
+         - Answer: prints the reservations from the extra SMS inbox on the first of April.
 

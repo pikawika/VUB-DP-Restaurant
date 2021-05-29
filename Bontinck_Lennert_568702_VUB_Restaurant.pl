@@ -757,6 +757,36 @@ reservations_on_day([reservation(_, [DayNotMatched, MonthNothEqual], _, _, _, _)
 	reservations_on_day(OtherReservations, OtherReservationsOnDay, [Day, Month]) .
 
 /* 
+----------------------------------------------
+|           TABLES TO TEXTUAL TABLES         |
+----------------------------------------------
+
+The code below is responsible for converting an internal table representation to a textual one
+*/
+
+/* Sort reservation on time (thus not date): TODO */
+internal_to_textual_table_representaiton([0, 0, 1], "the table for four") .
+internal_to_textual_table_representaiton([0, 1, 0], "the table for three") .
+internal_to_textual_table_representaiton([0, 1, 1], "the table for three and four") .
+internal_to_textual_table_representaiton([1, 0, 0], "the table for two") .
+internal_to_textual_table_representaiton([1, 0, 1], "the table for two and fout") .
+internal_to_textual_table_representaiton([1, 1, 0], "the table for two and three") .
+internal_to_textual_table_representaiton([1, 1, 1], "all tables") .
+
+
+/* 
+----------------------------------------------
+|             ORDERING RESERVATIONS          |
+----------------------------------------------
+
+The code below is responsible for ordering reservations. It is modified from the British Museum sort seen during the lectures.
+*/
+
+/* Sort reservation on time (thus not date): TODO */
+order_reservations_on_day(Reservations, Reservations, _Day) .
+
+
+/* 
 ##################################################################
 #                          DISPLAY SYSTEM                        #
 ##################################################################
@@ -764,6 +794,31 @@ reservations_on_day([reservation(_, [DayNotMatched, MonthNothEqual], _, _, _, _)
 The below code is responsible for displaying the results.
 */
 
-/* The below code represents the reservations in a textual manner */
+/* Prints the reservations of a specified date [Day, Month] in a textual manner */
+textual_display_reservations_on_day(Sms, Reservations, [Day, Month]) :-
+	reservations_on_day(Reservations, ReservationsOnDay, [Day, Month]),
+	order_reservations_on_day(ReservationsOnDay, OrderedReservations, [Day, Month]),
+	write( '\n\n' ),
+	writef( '------------------------------------------ Restaurant XX planning of %t/%t ------------------------------------------', [Day, Month]),
+	write( '\n\n' ),
+	textual_print_reservations(Sms, OrderedReservations),
+	write( '-------------------------------------------- Copyright Lennert Bontinck -------------------------------------------' ),
+	write( '\n\n' ).
 
+/* Prints a list of reservations in a textual manner */
+textual_print_reservations(_Sms, []) .
 
+textual_print_reservations(Sms, [reservation(_Id, _Date,  [StartTime, EndTime, _TimePreference], Amount, [Menu, _MenuPreference], Tables) | OtherReservations]) :-
+	minutes_since_midnight(StartTime, [StartHour, StartMinute]),
+	minutes_since_midnight(EndTime, [EndHour, EndMinute]),
+	is_menu(Menu, NaturalLangMenu),
+	internal_to_textual_table_representaiton(Tables, TextualTables),
+	writef( 'At %th%t, %t people will arive. They will have the %t menu and sit at %w. They will leave at %th%t.', [StartHour, StartMinute, Amount, NaturalLangMenu, TextualTables, EndHour, EndMinute]),
+	write( '\n\n' ),
+	textual_print_reservations(Sms, OtherReservations) .
+
+/* Prints the reservations collected from the extra sms inbox on a specified date. */
+textual_print_reservations_from_extra_sms([Day, Month]) :-
+	is_extra_processed_sms_inbox( Sms ),
+	sms_to_reservations( Sms, Reservations ),
+	textual_display_reservations_on_day(Sms, Reservations, [Day, Month]) .
