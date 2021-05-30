@@ -805,13 +805,13 @@ The code below is responsible for converting an internal table representation to
 */
 
 /* Sort reservation on time (thus not date): TODO */
-internal_to_textual_table_representaiton([0, 0, 1], "the table for four") .
-internal_to_textual_table_representaiton([0, 1, 0], "the table for three") .
-internal_to_textual_table_representaiton([0, 1, 1], "the table for three and four") .
-internal_to_textual_table_representaiton([1, 0, 0], "the table for two") .
-internal_to_textual_table_representaiton([1, 0, 1], "the table for two and fout") .
-internal_to_textual_table_representaiton([1, 1, 0], "the table for two and three") .
-internal_to_textual_table_representaiton([1, 1, 1], "all tables") .
+internal_to_textual_table_representation([0, 0, 1], "the table for four") .
+internal_to_textual_table_representation([0, 1, 0], "the table for three") .
+internal_to_textual_table_representation([0, 1, 1], "the table for three and four") .
+internal_to_textual_table_representation([1, 0, 0], "the table for two") .
+internal_to_textual_table_representation([1, 0, 1], "the table for two and fout") .
+internal_to_textual_table_representation([1, 1, 0], "the table for two and three") .
+internal_to_textual_table_representation([1, 1, 1], "all tables") .
 
 
 /* 
@@ -868,26 +868,32 @@ The below code is responsible for displaying the results.
 The code below is responsible for textually displaying reservations.
 */
 
-/* Prints the reservations of a specified date [Day, Month] in a textual manner. */
+/* Prints the reservations for Restaurant XX of a specified date [Day, Month] in a textual manner.
+	Shows restaurant title and footer in an ASCII art inspired by: https://www.asciiart.eu/art-and-design/borders */
 textual_display_reservations_on_day(Sms, Reservations, [Day, Month]) :-
 	reservations_on_day(Reservations, ReservationsOnDay, [Day, Month]),
 	sort_reservations(ReservationsOnDay, OrderedReservations),
 	write( '\n\n' ),
-	writef( '------------------------------------------ Restaurant XX planning of %t/%t ------------------------------------------', [Day, Month]),
+	writef( '   ______________________________\n / \\                             \\\n|   |                            |\n \\_ |                            |\n    | RESTAURANT XX RESERVATIONS |\n    |           %t/%t             |\n    |   _________________________|___\n    |  /                            /\n    \\_/____________________________/', [Day, Month]),
 	write( '\n\n' ),
 	textual_print_reservations(Sms, OrderedReservations),
-	write( '-------------------------------------------- Copyright Lennert Bontinck -------------------------------------------' ),
+	write( '------------------------------------------------- Copyright Lennert Bontinck ------------------------------------------------' ),
 	write( '\n\n' ) .
 
-/* Prints a list of reservations in a textual manner */
+/* Prints a list of reservations in a textual manner.
+	Also finds the related SMS message to show it as a form of identification.  */
 textual_print_reservations(_Sms, []) .
 
-textual_print_reservations(Sms, [reservation(_Id, _Date,  [StartTime, EndTime, _TimePreference], Amount, [Menu, _MenuPreference], Tables) | OtherReservations]) :-
+textual_print_reservations(Sms, [reservation(Id, _Date,  [StartTime, EndTime, _TimePreference], Amount, [Menu, _MenuPreference], Tables) | OtherReservations]) :-
 	minutes_since_midnight(StartTime, [StartHour, StartMinute]),
 	minutes_since_midnight(EndTime, [EndHour, EndMinute]),
 	is_menu(Menu, NaturalLangMenu),
-	internal_to_textual_table_representaiton(Tables, TextualTables),
+	internal_to_textual_table_representation(Tables, TextualTables),
+	nth0(Id,Sms, OrderMessage),
+
 	writef( 'At %th%t, %t people will arive. They will have the %t menu and sit at %w. They will leave at %th%t.', [StartHour, StartMinute, Amount, NaturalLangMenu, TextualTables, EndHour, EndMinute]),
+	write( '\n' ),
+	writef( '\tOrder message: %t', [OrderMessage]),
 	write( '\n\n' ),
 	textual_print_reservations(Sms, OtherReservations) .
 
