@@ -52,6 +52,11 @@ Testing performed and general content of system:
          - Test if the list of NLP representations links correctly with CLPFD reservation requests representation
       - clp_labeling
          - Test if input list of reservation requests is labelled.
+      - wasted_space
+         - Test if assignment of table with lesser wasted space is indeed performed.
+      - total_amount & minimizer
+         - Test if assignment of most people is indeed performed
+		 - done by testing minimizer which is used for labeling and combines wasted_space and total_amount
       - sms_to_reservations
          - Tests if SMS inbox can be linked with the made reservations correctly, chaining together all systems.
       - reservations_on_day
@@ -218,17 +223,17 @@ is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 
 /* Succeeds when its argument represents the extra pre-processed sms inbox provided by me to demonstrate generality.
 	Very simple dataset for easy testing. */
-is_extra_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,april],
-								[hi,can,i,book,a,place,at,8,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please],
-								[table,for,3,at,8,pm,on,the,first,of,april,for,the,standard,menu,please]] ) .
+is_extra_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,december],
+								[hi,can,i,book,a,place,at,8,pm,for,4,persons,on,the,first,of,december,for,the,theatre,menu,please],
+								[table,for,3,at,8,pm,on,the,first,of,december,for,the,standard,menu,please]] ) .
 
 /* Succeeds when its argument represents the second extra pre-processed sms inbox provided by me to demonstrate generality.
 	More challanging dataset for testing. */
-is_extra_processed_sms_inbox2( [[table,for,2,at,21,':',00,on,the,first,of,april],
-								[table,for,2,at,20,':',00,on,the,first,of,april,preferably,for,the,standard,menu],
-								[4,of,us,on,1,'/',4,preferably,at,8,pm],
-								[hi,can,i,book,a,place,at,9,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please],
-								[table,for,3,at,8,pm,on,the,first,of,april,for,the,standard,menu,please]] ) .
+is_extra_processed_sms_inbox2( [[table,for,2,at,21,':',00,on,the,first,of,december],
+								[table,for,2,at,20,':',00,on,the,first,of,december,preferably,for,the,standard,menu],
+								[4,of,us,on,1,'/',12,preferably,at,8,pm],
+								[hi,can,i,book,a,place,at,9,pm,for,4,persons,on,the,first,of,december,for,the,theatre,menu,please],
+								[table,for,3,at,8,pm,on,the,first,of,december,for,the,standard,menu,please]] ) .
 
 
 
@@ -997,14 +1002,14 @@ nlp_to_clp_iter( Id, [[[Day, Month], [StartTime, TimePreference], Amount, [Menu,
 ----------------------------------------------
 */
 
-/* Performs labeling giving preference to a reservation setup where least spaces are wasted.
+/* Performs labeling giving preference to seating more people and then having less wasted space.
 	Has a parameter for the initial list of reservation requests and a final list of confirmed reservations. */
 clp_labeling(InputRequestList, Reservations) :-
 	constrain_reservation_request_menu(InputRequestList, UpdatedRequestList, VariablesForLabelingMenu),
 	constrain_reservation_request_table(UpdatedRequestList, VariablesForLabelingTable),
 	constrain_reservation_request_time(UpdatedRequestList, FinalRequestList, VariablesForLabelingTime),
 	constrain_reservation_request_double_booking(FinalRequestList, VariablesForLabelingDoubleBooking),
-	wasted_space(FinalRequestList, Minimization),
+	minimizer(FinalRequestList, Minimization),
 	append([[Minimization], VariablesForLabelingMenu, VariablesForLabelingTable, VariablesForLabelingTime, VariablesForLabelingDoubleBooking], Variables),
 	labeling( [min(Minimization)], Variables ),
 	reservationrequests_to_reservation(FinalRequestList, Reservations).
@@ -1019,6 +1024,21 @@ wasted_space([reservation_request(_Id, _Date, _Time, Amount, _Menu, [TableFor2, 
 	Minimization #= NewMinimization + (TotalSeatingCapacity - Amount),
 	wasted_space(OtherReservationRequests, NewMinimization) .
 
+
+
+/* This will calculate the total amount of people served in the reservations.
+	Maximizing this can be used as a criteria for labeling. */
+total_amount([], 0) .
+total_amount([reservation_request(_Id, _Date, _Time, Amount, _Menu, _Tables) | OtherReservationRequests], Maximization) :-
+	Maximization #= NewMaximization + Amount,
+	total_amount(OtherReservationRequests, NewMaximization) .
+
+/* This will use wasted_space and total_amount to create a minimizer.
+	total_amount will have a bigger influence as is likely preffered by the restaurant.  */
+minimizer(ReservationRequests, Minimization) :-
+	wasted_space(ReservationRequests, WastedSpace),
+	total_amount(ReservationRequests, TotalAmount),
+	Minimization #= WastedSpace - TotalAmount .
 
 
 

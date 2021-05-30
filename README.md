@@ -113,11 +113,11 @@ Some examples of the performed tests through the interpreter are given below.
       - Test query: ```test_dcg_sample_8( Result ) .```
          - Answer: ```Result = [[18, 3], [1140, 1], 7, [1, 2]]```
       - Test query: ```test_dcg_sample_extra_1( Result ) .```
-         - Answer: ```Result = [[1, 4], [1200, 1], 2, [1, 2]]```
+         - Answer: ```Result = [[1, 12], [1200, 1], 2, [1, 2]]```
       - Test query: ```test_dcg_sample_extra_2( Result ) .```
-         - Answer: ```Result = [[1, 4], [1200, 1], 4, [2, 1]]```
+         - Answer: ```Result = [[1, 12], [1200, 1], 4, [2, 1]]```
       - Test query: ```test_dcg_sample_extra_3( Result ) .```
-         - Answer: ```Result = [[1, 4], [1200, 1], 3, [1, 1]]```
+         - Answer: ```Result = [[1, 12], [1200, 1], 3, [1, 1]]```
       - Test query: ```test_dcg_sample_all() .```
          - Answer: ```true```
    
@@ -156,9 +156,9 @@ Some examples of the performed tests through the interpreter are given below.
       
       - Test if the list of SMS messages links correctly with the list of NLP representations
       - Test query: ```is_extra_processed_sms_inbox(Inbox), sms_to_nlp(Inbox, NlpRepresentation) . ```
-         - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on, the, first, of, april], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, april, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, april, for, the, standard, menu, please]],```
+         - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on, the, first, of, december], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, december, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, december, for, the, standard, menu, please]],```
             
-            ```NlpRepresentation = [[[1, 4], [1200, 1], 2, [1, 2]], [[1, 4], [1200, 1], 4, [2, 1]], [[1, 4], [1200, 1], 3, [1, 1]]]```
+            ```NlpRepresentation = [[[1, 12], [1200, 1], 2, [_55204, 3]], [[1, 12], [1200, 1], 4, [2, 1]], [[1, 12], [1200, 1], 3, [1, 1]]]```
       
    - ```nlp_to_clp```
       
@@ -174,7 +174,7 @@ Some examples of the performed tests through the interpreter are given below.
    
    - ```wasted_space```
    
-      - Tests if the wasted space minimizer works by checking some samples individually
+      - Tests if the wasted space minimizer works by checking some samples individually as labelling will use both wasted_space and total_amount combined but the latter has no impact since it is equal for all variations.
       - Test query: ```test_textual_output_sample_1([18,3]) .```
          - Prints the reservations from the provided SMS inbox filter to only have first (nth1 index 1) sample on the 18th of March.
          - Answer: At 20h0, 2 people will arrive. They will have the standard menu and sit at the table for two. They will leave at 22h0.
@@ -185,8 +185,8 @@ Some examples of the performed tests through the interpreter are given below.
       
       - Tests if SMS inbox can be linked with the made reservations correctly, chaining together all systems.
       - Test query: ```is_extra_processed_sms_inbox( Sms ), sms_to_reservations( Sms, Reservations ) .```
-         - Answer: ```Sms = [[table, for, 2, at, 20, :, 0, on, the, first, of, april], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, april, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, april, for, the, standard, menu, please]],```
-            ```Reservations = [reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])] ```
+         - Answer: ```Sms = [[table, for, 2, at, 20, :, 0, on, the, first, of, december], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, december, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, december, for, the, standard, menu, please]],```
+            ```Reservations = [reservation(0, [1, 12], [1200, 1320, 1], 2, [1, 3], [1, 0, 0]), reservation(1, [1, 12], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 12], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])] ```
       
    - ```reservations_on_day```
       
@@ -207,26 +207,26 @@ Some examples of the performed tests through the interpreter are given below.
 - OUTPUT SYSTEM
    - ```textual_display_reservations_on_day```
       - Test if the list of reservations is displayed correctly for a given day.
-      - Test query: ```is_extra_processed_sms_inbox( Sms ), sms_to_reservations( Sms, Reservations ), textual_display_reservations_on_day(Sms, Reservations, [1,4]) .```
-         - Answer: prints the reservations from the extra SMS inbox on the first of April.
+      - Test query: ```is_extra_processed_sms_inbox( Sms ), sms_to_reservations( Sms, Reservations ), textual_display_reservations_on_day(Sms, Reservations, [1,12]) .```
+         - Answer: prints the reservations from the extra SMS inbox on the first of December.
    - ```textual_print_reservations_from_extra_sms```
       - Test if the list of reservations is displayed correctly from the extra SMS inbox on a given day.
-      - Test query:  ```textual_print_reservations_from_extra_sms([1,4]) .```
-         - Answer: prints the reservations from the extra SMS inbox on the first of April.
+      - Test query:  ```textual_print_reservations_from_extra_sms([1,12]) .```
+         - Answer: prints the reservations from the extra SMS inbox on the first of December.
             - At 20h0, 4 people will arrive. They will have the theatre menu and sit at the table for four. They will leave at 21h0.
-               - Order message: [hi,can,i,book,a,place,at,8,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please]
+               - Order message: [hi,can,i,book,a,place,at,8,pm,for,4,persons,on,the,first,of,december,for,the,theatre,menu,please]
             - At 20h0, 2 people will arrive. They will have the standard menu and sit at the table for two. They will leave at 22h0.
-               - Order message: [table,for,2,at,20,:,0,on,the,first,of,april]
+               - Order message: [table,for,2,at,20,:,0,on,the,first,of,december]
             - At 20h0, 3 people will arrive. They will have the standard menu and sit at the table for three. They will leave at 22h0.
-               - Order message: [table,for,3,at,8,pm,on,the,first,of,april,for,the,standard,menu,please]
+               - Order message: [table,for,3,at,8,pm,on,the,first,of,december,for,the,standard,menu,please]
    - ```textual_print_reservations_from_extra_sms2```
       - Same as above but with more samples since it uses the second extra SMS inbox. Demonstrates system is capable of handling "preference".
-      - Test query:  ```textual_print_reservations_from_extra_sms2([1,4]) .```
-         - Answer: prints the reservations from the extra SMS inbox on the first of April.
+      - Test query:  ```textual_print_reservations_from_extra_sms2([1,12]) .```
+         - Answer: prints the reservations from the extra SMS inbox on the first of December.
             - At 19h0, 4 people will arrive. They will have the theatre menu and sit at the table for four. They will leave at 20h0.
-               - Order message: [hi,can,i,book,a,place,preferably,at,8,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please]
+               - Order message: [hi,can,i,book,a,place,preferably,at,8,pm,for,4,persons,on,the,first,of,december,for,the,theatre,menu,please]
             - At 20h0, 2 people will arrive. They will have the theatre menu and sit at the table for four. They will leave at 21h0.
-               - Order message: [table,for,2,at,20,:,0,on,the,first,of,april,preferably,for,the,standard,menu]
+               - Order message: [table,for,2,at,20,:,0,on,the,first,of,december,preferably,for,the,standard,menu]
             - [...]
    - ```textual_print_reservations_from_provided_sms```
       - Test if the list of reservations is displayed correctly from the given SMS inbox on a given day.
