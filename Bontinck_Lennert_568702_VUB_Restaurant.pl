@@ -10,6 +10,8 @@ The created code was tested on an incremental basis through the interpreter.
 
 To test the whole system by generating the final planning, one can use the following query to print the planning for the provided SMS messages on the 18th of march:
     textual_print_reservations_from_provided_sms([18,3]) .
+It will provide the following output:
+
 
 Testing performed and general content of system:
    - GENERAL PREDICATES:
@@ -146,11 +148,13 @@ Some global predicates to ensure uniformity.
 /* Succeeds when the first parameter is the integer representation of the second parameter's menu */
 is_menu(1, standard) .
 is_menu(2, theatre) .
+is_max_menu(2) .
 
 /* Succeeds when the first parameter is the integer representation of the second parameter's preference  */
 is_preference(1, fixed) .
 is_preference(2, preferred) .
 is_preference(3, unspecified) .
+is_max_preference(3) .
 
 /* Succeeds when first parameter (MinuteSinceMidnight) is equal to the passed minutes since midnight for the given second parameter ([Hour, Minute]) */
 minutes_since_midnight(MinuteSinceMidnight, [Hour, Minute]) :-
@@ -189,6 +193,7 @@ The following code provides the pre-processed SMS inboxes so that it can be easi
 % NOTE: SMS inbox with preffered things filter out is used by default since constrain doesn't recognize them. --> comment this one out and enable the other one when using made test predicates.
 is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 						[please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th],
+						%[we,would,like,a,table,for,5,preferably,at,8,pm,on,18,'/',03],
 						[can,i,book,a,table,at,9,pm,for,2,people,on,the,18,th,of,march,for,the,standard,menu,please],
 						[reserve,us,a,table,on,march,18,for,a,party,of,4,for,the,standard,menu],
 						[9,people,on,18,th,of,march],
@@ -211,6 +216,11 @@ is_extra_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,april],
 								[hi,can,i,book,a,place,at,8,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please],
 								[table,for,3,at,8,pm,on,the,first,of,april,for,the,standard,menu,please]] ) .
 
+/* Succeeds when its argument represents the second extra pre-processed sms inbox provided by me to demonstrate generality. */
+is_extra_processed_sms_inbox2( [[table,for,2,at,20,':',00,on,the,first,of,april],
+								[4,of,us,on,1,'/',4,preferably,at,8,pm],
+								[hi,can,i,book,a,place,at,8,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please],
+								[table,for,3,at,8,pm,on,the,first,of,april,for,the,standard,menu,please]] ) .
 
 
 
@@ -786,31 +796,43 @@ The internal representation of a time variable is a list: [StartTime, EndTime, T
 */
 
 /* Constraints for reservation time:
+   - When time is fixed we keep the variable ground, otherwise it can be changed.
    - During opening hours.
    - Rounded to specified rounding.
    - Long enough for chosen menu.
+
+	NOTE: makes a new list since time variables are already ground when prefferable and we need the as variables
  */
-constrain_reservation_request_time([], []) .
+constrain_reservation_request_time([], [], []) .
 
 
 
-constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [Menu, _MenuPreference], _Tables) | OtherReservationRequests], [ StartTime, EndTime, Menu | OtherVariablesForLabeling]) :- 
+constrain_reservation_request_time([reservation_request(Id, Date, [StartTime, EndTime, TimePreference], Amount, [Menu, MenuPreference], Tables) | OtherReservationRequests], 
+									[reservation_request(Id, Date, [StartTimeNew, EndTimeNew, TimePreference], Amount, [Menu, MenuPreference], Tables) | OtherReservationRequestsNew], 
+										[ StartTimeNew, EndTimeNew, Menu | OtherVariablesForLabeling]) :-
+	
+	is_max_preference(MaxPreference),
+	TimePreference in 1..MaxPreference,
+	is_preference(FixedPreference, fixed),
+	( TimePreference #= FixedPreference ) #==> ( StartTimeNew #= StartTime  #/\ EndTimeNew #= EndTime ),
+
 	is_opening_time(OpeningTime),
 	is_closing_time(ClosingTime),
-	StartTime in OpeningTime..ClosingTime,
-	EndTime in OpeningTime..ClosingTime,
-	EndTime #>= StartTime,
+	StartTimeNew in OpeningTime..ClosingTime,
+	EndTimeNew in OpeningTime..ClosingTime,
+	EndTimeNew #>= StartTimeNew,
 	
 	is_time_rounding(TimeRounding),
-	StartTime mod TimeRounding #= 0,
-	EndTime mod TimeRounding #= 0,
+	StartTimeNew mod TimeRounding #= 0,
 
+	is_max_menu(MaxMenu),
+	Menu in 1..MaxMenu,
 	is_menu(StandardMenu, standard),
 	is_menu(TheatreMenu, theatre),
-	( Menu #= StandardMenu ) #==> ( EndTime - StartTime #= 120 ),
-	( Menu #= TheatreMenu ) #==> ( EndTime - StartTime #= 60 ),
+	( Menu #= StandardMenu ) #==> ( EndTimeNew - StartTimeNew #= 120  ),
+	( Menu #= TheatreMenu ) #==> ( EndTimeNew - StartTimeNew #= 60 ),
 	
-	constrain_reservation_request_time(OtherReservationRequests, OtherVariablesForLabeling) .
+	constrain_reservation_request_time(OtherReservationRequests, OtherReservationRequestsNew, OtherVariablesForLabeling) .
 
 
 
@@ -954,13 +976,13 @@ nlp_to_clp_iter( Id, [[[Day, Month], [StartTime, TimePreference], Amount, [Menu,
 */
 
 /* Performs labeling using FFC and all constraints for the input list which is a CLP representation */
-clp_labeling(ClpList) :-
-	constrain_reservation_request_menu(ClpList, VariablesForLabelingMenu),
-	constrain_reservation_request_table(ClpList, VariablesForLabelingTable),
-	constrain_reservation_request_time(ClpList,VariablesForLabelingTime),
-	constrain_reservation_request_double_booking(ClpList, VariablesForLabelingDoubleBooking),
+clp_labeling(InputList, UpdatedList) :-
+	constrain_reservation_request_menu(InputList, VariablesForLabelingMenu),
+	constrain_reservation_request_table(InputList, VariablesForLabelingTable),
+	constrain_reservation_request_time(InputList, UpdatedList, VariablesForLabelingTime),
+	constrain_reservation_request_double_booking(UpdatedList, VariablesForLabelingDoubleBooking),
 	append([VariablesForLabelingMenu, VariablesForLabelingTable, VariablesForLabelingTime, VariablesForLabelingDoubleBooking], Variables),
-	wasted_space(ClpList, _Minimization),
+	wasted_space(UpdatedList, _Minimization),
 	labeling( [ffc], Variables ) .
 
 
@@ -1003,8 +1025,8 @@ reservationrequests_to_reservation([reservation_request(Id, Date, Time, Amount, 
 sms_to_reservations(Sms, Reservations) :-
 	sms_to_nlp( Sms, Nlp ),
 	nlp_to_clp( Nlp, ReservationRequests),
-	clp_labeling(ReservationRequests),
-	reservationrequests_to_reservation(ReservationRequests, Reservations).
+	clp_labeling(ReservationRequests, LabeledRequests),
+	reservationrequests_to_reservation(LabeledRequests, Reservations).
 
 
 
@@ -1155,6 +1177,14 @@ textual_print_reservations_from_extra_sms([Day, Month]) :-
 	sms_to_reservations( Sms, Reservations ),
 	textual_display_reservations_on_day(Sms, Reservations, [Day, Month]),
 	! .
+
+/* Prints the reservations collected from the extra sms inbox 2 on a specified date.
+	Uses a cut to not allow backtracking for displaying, as proposed by the assignment.  */
+	textual_print_reservations_from_extra_sms2([Day, Month]) :-
+		is_extra_processed_sms_inbox2( Sms ),
+		sms_to_reservations( Sms, Reservations ),
+		textual_display_reservations_on_day(Sms, Reservations, [Day, Month]),
+		! .
 
 
 

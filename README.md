@@ -132,10 +132,11 @@ Some examples of the performed tests through the interpreter are given below.
          - Must be in opening hours.
          - Time must be rounded to specified rounding from is_time_rounding (e.g. time rounding = 60, all times must be at round hour thus with minutes = 0).
          - Must be long enough for the menu.
-      - Test query: ```constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [1, _MenuPreference], _ClpTables)], VariablesForLabeling), indomain(StartTime) .```
-         - Answer: ```StartTime = 1140, EndTime = 1260, VariablesForLabeling = [1140, 1260, 1]```
-         - Backtrack: ```StartTime = 1200, EndTime = 1320, VariablesForLabeling = [1200, 1320, 1]```
-         - Backtrack: ```StartTime = 1260, EndTime = 1380, VariablesForLabeling = [1260, 1380, 1].```
+      - Test query: ```constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, 1], _Amount, [1, _MenuPreference], _ClpTables)], UpdatedRequests, VariablesForLabeling), indomain(StartTime) .```
+         - Note: This makes the time "fixed" -> has easier results -> works when leaving TimePreference a variable as well.
+         - Answer: ```StartTime = 1140, EndTime = 1260, UpdatedRequests = [reservation_request(_Id, _Date, [1140, 1260, 1], _Amount, [1, _MenuPreference], _ClpTables)], VariablesForLabeling = [1140, 1260, 1]```
+         - Backtrack: ```StartTime = 1200, EndTime = 1320, UpdatedRequests = [reservation_request(_Id, _Date, [1200, 1320, 1], _Amount, [1, _MenuPreference], _ClpTables)], VariablesForLabeling = [1200, 1320, 1]```
+         - Backtrack: ```StartTime = 1260, EndTime = 1380, UpdatedRequests = [reservation_request(_Id, _Date, [1260, 1380, 1], _Amount, [1, _MenuPreference], _ClpTables)], VariablesForLabeling = [1260, 1380, 1].```
    - ```constrain_reservation_request_table``` (CLPFD)
       -  Tests constraints for tables:
          - Amount of people must not exceed maximum capacity (9).
@@ -208,6 +209,13 @@ Some examples of the performed tests through the interpreter are given below.
                - Order message: [table,for,2,at,20,:,0,on,the,first,of,april]
             - At 20h0, 3 people will arrive. They will have the standard menu and sit at the table for three. They will leave at 22h0.
                - Order message: [table,for,3,at,8,pm,on,the,first,of,april,for,the,standard,menu,please]
+   - ```textual_print_reservations_from_extra_sms2```
+      - Same as above but with more samples since it uses the second extra SMS inbox. Demonstrates system is capable of handling "preference".
+      - Test query:  ```textual_print_reservations_from_extra_sms2([1,4]) .```
+         - Answer: prints the reservations from the extra SMS inbox on the first of April.
+            - At 19h0, 4 people will arrive. They will have the theatre menu and sit at the table for four. They will leave at 20h0.
+               - Order message: [hi,can,i,book,a,place,preferably,at,8,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please]
+            - [...] (fully booked 8PM reservation.)
    - ```textual_print_reservations_from_provided_sms```
       - Test if the list of reservations is displayed correctly from the given SMS inbox on a given day.
       - Test query:  ```textual_print_reservations_from_provided_sms([18,3]) .```
