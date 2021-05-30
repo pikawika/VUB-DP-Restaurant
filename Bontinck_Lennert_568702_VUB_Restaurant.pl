@@ -31,10 +31,9 @@ Some things were assumed:
 KNOWN BUGS:
    - The constraint system does not used the "preference" information extracted by the NLP
       - Thus all bounded menu's and times are seen as "fixed"
-      - This causes a false since double booking occurs
-   - It takes a long time to perform the scheduling on the provided set (when disabling the preffered entries from the given sms inbox due to above bug)
-      - Goes instantly on custom extra SMS set
+      - This causes a false since double booking occurs -> the list of provided menu's is shortened to not include those with "preffered"
 	  - Each individual case can be tested from provided set which does yield correct result -> see tests given as test_textual_output_sample_XXX methods (e.g. test_textual_output_sample_1)
+	     ---> Since this does nth1 you will have to uncomment the commented out full dataset and comment the filtered one
    - ffc is used instead of an optimisation such as the wasted_space minimizer that is provided but non functional due to non ground error.
 
    --> All of these errors are related to the constraint system which works for the extra given samples. I hope this is taken into consideration when marking the other components of the system that do seem to work completely.
@@ -103,14 +102,23 @@ The following code provides the pre-processed SMS inbox so that it can be easily
 */
 
 /* Succeeds when its argument represents the pre-processed sms inbox provided by the assignment. */
+% SMS inbox with preffered things filter out is used by default since constrain doesn't recognize them.
 is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
+						[please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th],
+						[can,i,book,a,table,at,9,pm,for,2,people,on,the,18,th,of,march,for,the,standard,menu,please],
+						[reserve,us,a,table,on,march,18,for,a,party,of,4,for,the,standard,menu],
+						[9,people,on,18,th,of,march],
+						[book,6,of,us,in,on,18,march,at,20,':',00]] )  .
+
+% Full given SMS inbox below
+/*is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 						[please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th],
 						[we,would,like,a,table,for,5,preferably,at,8,pm,on,18,'/',03],
 						[can,i,book,a,table,at,9,pm,for,2,people,on,the,18,th,of,march,for,the,standard,menu,please],
 						[reserve,us,a,table,on,march,18,for,a,party,of,4,for,the,standard,menu],
 						[9,people,on,18,th,of,march],
 						[book,6,of,us,in,on,18,march,at,20,':',00],
-						[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) .
+						[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) . */
 
 
 
@@ -328,10 +336,17 @@ month(Month) --> [StringMonth], { StringMonth = december, Month = 12} .
 ----------------------------------------------
 */
 
-/* Succeeds when the parameter (Time = [Hour, Minute, Preference]) is equal to the parsed textual time description. */
-time_description([Hour, Minute, Preference]) --> [at], time([Hour, Minute]), {is_preference(Preference, fixed)} .
-time_description([Hour, Minute, Preference]) --> preference, [at], time([Hour, Minute]), {is_preference(Preference, preferred)} .
-no_time_description([_Hour, _Minute, Preference]) --> [], {is_preference(Preference, unspecified)} .
+/* Succeeds when the parameter (Time = [StartTime, Preference]) is equal to the parsed textual time description.
+	StartTime is represented as minutes since midnight in its final form as this will make the final system easier. */
+time_description([StartTime, Preference]) --> 
+	[at], time([Hour, Minute]),
+	{minutes_since_midnight(StartTime, [Hour, Minute]), is_preference(Preference, fixed)} .
+
+time_description([StartTime, Preference]) --> 
+	preference, [at], time([Hour, Minute]),
+	{minutes_since_midnight(StartTime, [Hour, Minute]), is_preference(Preference, preferred)} .
+
+no_time_description([_StartTime, Preference]) --> [], {is_preference(Preference, unspecified)} .
 
 /* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed 24 hour time representation (e.g. 14:00). */
 time([Hour, Minute]) --> hour(Hour), [':'], minute(Minute) .
@@ -390,8 +405,7 @@ menu_description([Menu, Preference]) --> preference, [for], article, menu(Menu),
 menu_description([Menu, Preference]) --> [for], menu(Menu), [menu], {is_preference(Preference, fixed)} .
 menu_description([Menu, Preference]) --> preference, [for], menu(Menu), [menu], {is_preference(Preference, preferred)} .
 
-/* If no menu is specified, the standard menu is presupposed but not fixed */
-no_menu_description([Menu, Preference]) --> [], {is_menu(Menu, standard), is_preference(Preference, preferred)} .
+no_menu_description([_Menu, Preference]) --> [], {is_preference(Preference, unspecified)} .
 
 /* Succeeds when the parameter (Menu) is equal to the textual representation of an allowed menu.
 	This abstraction makes it easier to add more menus down the line. */
@@ -705,8 +719,7 @@ nlp_to_clp( NlpList, ClpList ) :- nlp_to_clp_iter(0, NlpList, ClpList) .
 
 nlp_to_clp_iter(_Id, [], []) .
 
-nlp_to_clp_iter( Id, [[[Day, Month], [StartHour, StartMinute, TimePreference], Amount, [Menu, MenuPreference]] | NlpRest], [reservation_request(Id, [Day, Month], [StartTime, _ClpEndTime, TimePreference], Amount, [Menu, MenuPreference], _ClpTables) | ClpRest] ) :-
-	minutes_since_midnight(StartTime, [StartHour, StartMinute]) ,
+nlp_to_clp_iter( Id, [[[Day, Month], [StartTime, TimePreference], Amount, [Menu, MenuPreference]] | NlpRest], [reservation_request(Id, [Day, Month], [StartTime, _ClpEndTime, TimePreference], Amount, [Menu, MenuPreference], _ClpTables) | ClpRest] ) :-
 	NewId is Id + 1,
 	nlp_to_clp_iter(NewId, NlpRest, ClpRest) .
 

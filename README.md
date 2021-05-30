@@ -80,33 +80,33 @@ Some examples of such tests through the interpreter are given below.
    -  ```menu``` (DCG)
       -  Succeeds when the parameter (Menu) is equal to the textual representation of an allowed menu.
       -  Test query: ```menu( ExtractedMenu, [theatre], [] ) .```
-         - Answer: ```ExtractedMenu = theatre```
+         - Answer: ```ExtractedMenu = 2```
       -  Test query: ```menu( ExtractedMenu, [deluxe], [] ) .```
          - Answer: ```false```
    -  ```reservation_request``` and thus ```sentence```  (DCG)
       - To test these an easy 1 liner is made
       - Test query: ```test_dcg_sample_1( Result ) .```
-         - Answer: ```Result = [[18, 3], [20, 0, 1], 2, [1, 2]]```
+         - Answer: ```Result = [[18, 3], [1200, 1], 2, [1, 2]]```
       - Test query: ```test_dcg_sample_2( Result ) .```
-         - Answer: ```Result = [[18, 3], [_46754, _46760, 3], 3, [2, 1]]```
+         - Answer: ```Result = [[18, 3], [_46754, 3], 3, [2, 1]]```
       - Test query: ```test_dcg_sample_3( Result ) .```
-         - Answer: ```Result = [[18, 3], [20, 0, 2], 5, [1, 2]]```
+         - Answer: ```Result = [[18, 3], [1200, 2], 5, [1, 2]]```
       - Test query: ```test_dcg_sample_4( Result ) .```
-         - Answer: ```[[18, 3], [21, 0, 1], 2, [1, 1]]```
+         - Answer: ```[[18, 3], [1260, 1], 2, [1, 1]]```
       - Test query: ```test_dcg_sample_5( Result ) .```
-         - Answer: ```Result = [[18, 3], [_54644, _54650, 3], 4, [1, 1]]```
+         - Answer: ```Result = [[18, 3], [_54644, 3], 4, [1, 1]]```
       - Test query: ```test_dcg_sample_6( Result ) .```
-         - Answer: ```Result = [[18, 3], [_57262, _57268, 3], 9, [1, 2]]```
+         - Answer: ```Result = [[18, 3], [_57262, 3], 9, [1, 2]]```
       - Test query: ```test_dcg_sample_7( Result ) .```
-         - Answer: ```Result = [[18, 3], [20, 0, 1], 6, [1, 2]]```
+         - Answer: ```Result = [[18, 3], [1200, 1], 6, [1, 2]]```
       - Test query: ```test_dcg_sample_8( Result ) .```
-         - Answer: ```Result = [[18, 3], [19, 0, 1], 7, [1, 2]]```
+         - Answer: ```Result = [[18, 3], [1140, 1], 7, [1, 2]]```
       - Test query: ```test_dcg_sample_extra_1( Result ) .```
-         - Answer: ```Result = [[1, 4], [20, 0, 1], 2, [1, 2]]```
+         - Answer: ```Result = [[1, 4], [1200, 1], 2, [1, 2]]```
       - Test query: ```test_dcg_sample_extra_2( Result ) .```
-         - Answer: ```Result = [[1, 4], [20, 0, 1], 4, [2, 1]]```
+         - Answer: ```Result = [[1, 4], [1200, 1], 4, [2, 1]]```
       - Test query: ```test_dcg_sample_extra_3( Result ) .```
-         - Answer: ```Result = [[1, 4], [20, 0, 1], 3, [1, 1]]```
+         - Answer: ```Result = [[1, 4], [1200, 1], 3, [1, 1]]```
       - Test query: ```test_dcg_sample_all() .```
          - Answer: ```true```
 - CONSTRAINT SYSTEM
@@ -139,13 +139,15 @@ Some examples of such tests through the interpreter are given below.
    - ```sms_to_nlp``` 
       - Links a list of SMS messages to a list of NLP representations.
       - Test query: ```is_extra_processed_sms_inbox(Inbox), sms_to_nlp(Inbox, NlpRepresentation) . ```
-         - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on, the, first, of, april], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, april, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, april, for, the, standard, menu, please]],
-            NlpRepresentation = [[[1, 4], [20, 0, 1], 2, [1, 2]], [[1, 4], [20, 0, 1], 4, [2, 1]], [[1, 4], [20, 0, 1], 3, [1, 1]]]```
+         - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on, the, first, of, april], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, april, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, april, for, the, standard, menu, please]],```
+            
+            ```NlpRepresentation = [[[1, 4], [1200, 1], 2, [1, 2]], [[1, 4], [1200, 1], 4, [2, 1]], [[1, 4], [1200, 1], 3, [1, 1]]]```
    - ```nlp_to_clp```
       - Links a list of NLP representations to a list of CLP representations.
-      - Test query: ```nlp_to_clp([[[1, 4], [20, 0, 1], 2, [1, 2]], [[1, 4], [20, 0, 1], 4, [2, 1]], [[1, 4], [20, 0, 1], 3, [1, 1]]], ClpRepresention) . ```
-         - Answer: ```ClpRepresention = [reservation_request(0, [1, 4], [1200, _34966, 1], 2, [1, 2], _34944), reservation_request(1, [1, 4], [1200, _35128, 1], 4, [2, 1], _35106), reservation_request(2, [1, 4], [1200, _35290, 1], 3, [1, 1], _35268)]```
+      - Test query: ```nlp_to_clp([[[1, 4], [1200, 1], 2, [1, 2]], [[1, 4], [1200, 1], 4, [2, 1]], [[1, 4], [1200, 1], 3, [1, 1]]], ClpRepresention) . ```
+         - Answer: ```ClpRepresention = [reservation_request(0, [1, 4], [1200, _9338, 1], 2, [1, 2], _9316), reservation_request(1, [1, 4], [1200, _9400, 1], 4, [2, 1], _9378), reservation_request(2, [1, 4], [1200, _9462, 1], 3, [1, 1], _9440)]```
    - ```sms_to_reservations```
+      
       - Unifies SMS inbox with the made reservations, chains together other conversions.
       - Test query: ```is_extra_processed_sms_inbox( Sms ), sms_to_reservations( Sms, Reservations ) .```
          - Answer: ```Sms = [[table, for, 2, at, 20, :, 0, on, the, first, of, april], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, april, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, april, for, the, standard, menu, please]],```
