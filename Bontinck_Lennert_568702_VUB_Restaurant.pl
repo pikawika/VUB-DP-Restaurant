@@ -199,25 +199,14 @@ The following code provides the pre-processed SMS inboxes so that it can be easi
 */
 
 /* Succeeds when its argument represents the pre-processed sms inbox provided by the assignment. */
-% NOTE: SMS inbox with some reservtions left out is used by default due to the constraint system not being able to reject individual reservations when double booking is not avoidable. (discussed earlier on)
 is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
-						[please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th],
-						[we,would,like,a,table,for,5,preferably,at,8,pm,on,18,'/',03],
-						[can,i,book,a,table,at,9,pm,for,2,people,on,the,18,th,of,march,for,the,standard,menu,please],
-						[reserve,us,a,table,on,march,18,for,a,party,of,4,for,the,standard,menu],
-						%[9,people,on,18,th,of,march],
-						%[book,6,of,us,in,on,18,march,at,20,':',00],
-						[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) .
-
-% Full given SMS inbox below
-/*is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 						[please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th],
 						[we,would,like,a,table,for,5,preferably,at,8,pm,on,18,'/',03],
 						[can,i,book,a,table,at,9,pm,for,2,people,on,the,18,th,of,march,for,the,standard,menu,please],
 						[reserve,us,a,table,on,march,18,for,a,party,of,4,for,the,standard,menu],
 						[9,people,on,18,th,of,march],
 						[book,6,of,us,in,on,18,march,at,20,':',00],
-						[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) . */
+						[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) .
 
 
 
@@ -878,6 +867,7 @@ Remember, the internal representation of a table variable is a list: [TableFor2,
 /* Constraints for reservation tables:
    - Amount of people must not exceed maximum capacity (9).
    - Tables must be able to seat all people.
+   - Edge case: no tables are assigned since the reservation is rejected.
  */
 constrain_reservation_request_table([], []) .
 
@@ -890,7 +880,8 @@ constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, Amou
 	TableFor3 in 0..1,
 	TableFor4 in 0..1,
 	TotalSeatingCapacity #= 2*TableFor2 + 3*TableFor3 + 4*TableFor4,
-	TotalSeatingCapacity #>= Amount,
+	
+	( TotalSeatingCapacity #\= 0 ) #==> ( TotalSeatingCapacity #>= Amount ),
 	
 	constrain_reservation_request_table(OtherReservationRequests, OtherVariablesForLabeling) .
 
@@ -1002,14 +993,18 @@ nlp_to_clp_iter( Id, [[[Day, Month], [StartTime, TimePreference], Amount, [Menu,
 ----------------------------------------------
 */
 
-/* Performs labeling giving preference to seating more people and then having less wasted space.
+/* Performs labeling using either the fast or slow minimizer (comment out what is preffered).
 	Has a parameter for the initial list of reservation requests and a final list of confirmed reservations. */
 clp_labeling(InputRequestList, Reservations) :-
 	constrain_reservation_request_menu(InputRequestList, UpdatedRequestList, VariablesForLabelingMenu),
 	constrain_reservation_request_table(UpdatedRequestList, VariablesForLabelingTable),
 	constrain_reservation_request_time(UpdatedRequestList, FinalRequestList, VariablesForLabelingTime),
 	constrain_reservation_request_double_booking(FinalRequestList, VariablesForLabelingDoubleBooking),
-	minimizer(FinalRequestList, Minimization),
+	
+	% use the faster minimizer by default that only looks at the total amount of rejected reservations.
+	minimizer_fast(FinalRequestList, Minimization),
+	%minimizer(FinalRequestList, Minimization),
+	
 	append([[Minimization], VariablesForLabelingMenu, VariablesForLabelingTable, VariablesForLabelingTime, VariablesForLabelingDoubleBooking], Variables),
 	labeling( [min(Minimization)], Variables ),
 	reservationrequests_to_reservation(FinalRequestList, Reservations).
@@ -1033,12 +1028,32 @@ total_amount([reservation_request(_Id, _Date, _Time, Amount, _Menu, _Tables) | O
 	Maximization #= NewMaximization + Amount,
 	total_amount(OtherReservationRequests, NewMaximization) .
 
-/* This will use wasted_space and total_amount to create a minimizer.
-	total_amount will have a bigger influence as is likely preffered by the restaurant.  */
+
+
+/* This will calculate the total amount of rejected reservations.
+	Minimizing this can be used as a criteria for labeling. */
+total_rejections([], 0) .
+total_rejections([reservation_request(_Id, _Date, _Time, _Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservationRequests], Minimization) :-
+	( TableFor2 #= 0 #/\ TableFor3 #= 0 #/\ TableFor4 #= 0 ) #<==> Rejected,
+	Minimization #= NewMinimization + Rejected,
+	total_rejections(OtherReservationRequests, NewMinimization) .
+
+
+
+/* This will use wasted_space, total_amount and total_rejections to create a minimizer.
+	total_rejections has the highest impact since we want to reject as few reservations as possible.  */
 minimizer(ReservationRequests, Minimization) :-
 	wasted_space(ReservationRequests, WastedSpace),
 	total_amount(ReservationRequests, TotalAmount),
-	Minimization #= WastedSpace - TotalAmount .
+	total_rejections(ReservationRequests, Rejected),
+	Minimization #= WastedSpace + 3*TotalAmount + 9*Rejected.
+
+
+
+/* This will only use total_rejections to create a minimizer, which is faster than minimizer. */
+minimizer_fast(ReservationRequests, Minimization) :-
+	total_rejections(ReservationRequests, Rejected),
+	Minimization #= Rejected.
 
 
 
@@ -1079,7 +1094,7 @@ sms_to_reservations(Sms, Reservations) :-
 /* 
 ----------------------------------------------
 |            ALL RESERVATIONS TO DAY         |
-e---------------------------------------------
+----------------------------------------------
 */
 
 /* Unifies a list of reservations with reservations made on a particular day.
@@ -1096,6 +1111,29 @@ reservations_on_day([reservation(Id, [Day, Month], Time, Amount, Menu, Tables) |
 reservations_on_day([reservation(_, [DayNotMatched, MonthNothEqual], _, _, _, _) | OtherReservations], OtherReservationsOnDay, [Day, Month]) :-
 	( DayNotMatched \= Day ; MonthNothEqual \= Month ),
 	reservations_on_day(OtherReservations, OtherReservationsOnDay, [Day, Month]) .
+
+
+
+
+
+/* 
+----------------------------------------------
+|            NON EMPTY RESERVATIONS          |
+----------------------------------------------
+*/
+non_empty_reservations([], []) .
+
+
+
+non_empty_reservations([reservation(Id, Day, Time, Amount, Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservations], [reservation(Id, Day, Time, Amount, Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservationsNonNul]) :-
+	( TableFor2 \= 0 ; TableFor3 \= 0 ; TableFor4 \= 0 ),
+	non_empty_reservations(OtherReservations, OtherReservationsNonNul) .
+
+
+
+non_empty_reservations([reservation(_, _, _, _, _, [0, 0, 0]) | OtherReservations], OtherReservationsNonNul) :-
+	non_empty_reservations(OtherReservations, OtherReservationsNonNul) .
+
 
 
 
@@ -1186,7 +1224,8 @@ Uses some fancy ASCII art work and formatting :)
 	Shows restaurant title and footer in an ASCII art inspired by: https://www.asciiart.eu/art-and-design/borders */
 textual_display_reservations_on_day(Sms, Reservations, [Day, Month]) :-
 	reservations_on_day(Reservations, ReservationsOnDay, [Day, Month]),
-	sort_reservations(ReservationsOnDay, OrderedReservations),
+	non_empty_reservations(ReservationsOnDay, ReservationsToShow),
+	sort_reservations(ReservationsToShow, OrderedReservations),
 	write( '\n\n' ),
 	writef( '   _________________________________________________________\n / \\                                                        \\\n|   |            R E S T A U R A N T   X X                  |\n \\_ |                                                       |\n    |                                                       |\n    |                                                       |\n    |         R E S E R V A T I O N S    L I S T            |\n    |                   D A T E: %t/%t                       |\n    |                                                       |\n    |                                                       |\n    |                                                       |\n    |  M a d e    b y    L e n n e r t    B o n t i n c k   |\n    |   ____________________________________________________|___\n    |  /                                                       /\n    \\_/_______________________________________________________/\n', [Day, Month]),
 	write( '\n\n' ),

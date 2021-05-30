@@ -142,6 +142,7 @@ Some examples of the performed tests through the interpreter are given below.
       -  Tests constraints for tables:
          - Amount of people must not exceed maximum capacity (9).
          - Reserved tables must be able to seat all people.
+         - Edge case: no tables are assigned since the reservation is rejected.
       -  Test query: ```constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, 6, _, [TableFor2, TableFor3, TableFor4])], VariablesForLabeling), indomain(TableFor3) .```
          - Answer: ```TableFor2 = TableFor4, TableFor4 = 1, TableFor3 = 0, VariablesForLabeling = [6, 1, 0, 1]```
          - Backtrack: ```TableFor3 = TableFor4, TableFor4 = 1, VariablesForLabeling = [6, TableFor2, 1, 1], TableFor2 in 0..1, _52694#=2*TableFor2+7, _52694 in 7..9.```
