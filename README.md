@@ -66,6 +66,10 @@ Some examples of the performed tests through the interpreter are given below.
       - Succeeds when the argument represents the custom pre-processed SMS inbox.
       - Test query: ```is_extra_processed_sms_inbox(Inbox) .```
          - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on|...], [hi, can, i, book, a, place, at|...], [table, for, 3, at, 8, pm|...]].```
+   - ```is_extra_processed_sms_inbox2```
+      - Succeeds when the argument represents the custom pre-processed SMS inbox.
+      - Test query: ```is_extra_processed_sms_inbox2(Inbox) .```
+         - Answer: ```Inbox = [[table, for, 2, at, 21, :, 0, on|...], [table, for, 2, at, 20, :, 0|...], [4, of, us, on, 1, /|...], [hi, can, i, book, a|...], [table, for, 3, at|...]].```
    
 - NLP SYSTEM
    -  ```date``` (DCG)
@@ -92,7 +96,7 @@ Some examples of the performed tests through the interpreter are given below.
       -  Tested in the same manner as the date.
       -  Test query: ```menu( ExtractedMenu, [theatre], [] ) .```
          - Answer: ```ExtractedMenu = 2```
-      -  Test query: ```menu( ExtractedMenu, [deluxe], [] ) .```
+      -  Test query: ```menu( ExtractedMenu, [randomjunk], [] ) .```
          - Answer: ```false```
    -  ```reservation_request``` and thus ```sentence```  (DCG)
       - To test these an easy 1 liner is made
@@ -120,14 +124,20 @@ Some examples of the performed tests through the interpreter are given below.
          - Answer: ```Result = [[1, 12], [1200, 1], 3, [1, 1]]```
       - Test query: ```test_dcg_sample_all() .```
          - Answer: ```true```
+   -  Automated testing
+      -  The DCG part can be tested in a more automated way by checking whether the following predicates return true
+         -  ```test_dcg_sample_XXX_passes() .``` with XXX in 1..8
+            - Example: ```test_dcg_sample_1_passes() .```  should be true (and it is!).
+         - ```test_dcg_sample_all() .```  should be true (and it is!).
    
 - CONSTRAINT SYSTEM
    - ```constrain_reservation_request_menu``` (CLPFD)
       - Test constraints for the menu to be a singular allowed menu.
-      - Test query: ```constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _Tables)], VariablesForLabeling), indomain(Menu) .```
-         - Note: This makes the menu "fixed" -> has easier results -> works when leaving MenuPreference a variable as well.
-         - Answer: ```Menu = MenuNew, MenuNew = 1, VariablesForLabeling = [1]```
-         - Backtrack: ```Menu = MenuNew, MenuNew = 2, VariablesForLabeling = [2].```
+      - Test query: ```constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, 1], _Tables)], NewReservations, VariablesForLabeling), indomain(Menu) .```
+         - Note: uses menu "fixed".
+         - Answer: ```Menu = 1, NewReservations = [reservation_request(_Id, _Date, _Time, _Amount, [1, 1], _Tables)], VariablesForLabeling = [1]```
+         - Backtrack: ```Menu = 2, NewReservations = [reservation_request(_Id, _Date, _Time, _Amount, [2, 1], _Tables)], VariablesForLabeling = [2].```
+         - Menu can indeed be 1 or 2!
    - ```constrain_reservation_request_time``` (CLPFD)
       - Test constraints for time (StartTime and EndTime):
          - Must be in opening hours.
@@ -138,57 +148,69 @@ Some examples of the performed tests through the interpreter are given below.
          - Answer: ```StartTime = 1140, EndTime = 1260, UpdatedRequests = [reservation_request(_Id, _Date, [1140, 1260, 1], _Amount, [1, _MenuPreference], _ClpTables)], VariablesForLabeling = [1140, 1260, 1]```
          - Backtrack: ```StartTime = 1200, EndTime = 1320, UpdatedRequests = [reservation_request(_Id, _Date, [1200, 1320, 1], _Amount, [1, _MenuPreference], _ClpTables)], VariablesForLabeling = [1200, 1320, 1]```
          - Backtrack: ```StartTime = 1260, EndTime = 1380, UpdatedRequests = [reservation_request(_Id, _Date, [1260, 1380, 1], _Amount, [1, _MenuPreference], _ClpTables)], VariablesForLabeling = [1260, 1380, 1].```
+         - Time domains seem good!
    - ```constrain_reservation_request_table``` (CLPFD)
       -  Tests constraints for tables:
          - Amount of people must not exceed maximum capacity (9).
          - Reserved tables must be able to seat all people.
          - Edge case: no tables are assigned since the reservation is rejected.
       -  Test query: ```constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, 6, _, [TableFor2, TableFor3, TableFor4])], VariablesForLabeling), indomain(TableFor3) .```
-         - Answer: ```TableFor2 = TableFor4, TableFor4 = 1, TableFor3 = 0, VariablesForLabeling = [6, 1, 0, 1]```
-         - Backtrack: ```TableFor3 = TableFor4, TableFor4 = 1, VariablesForLabeling = [6, TableFor2, 1, 1], TableFor2 in 0..1, _52694#=2*TableFor2+7, _52694 in 7..9.```
+         - Answer: ```TableFor3 = 0, VariablesForLabeling = [6, TableFor2, 0, TableFor4], TableFor2 in 0..1, _13930#=2*TableFor2+4*TableFor4, TableFor4 in 0..1, _13930 in 0..6, _13930#>=6#<==>_14016, _13930#\=0#<==>_14040, _14016 in 0..1, _14040#==>_14016, _14040 in 0..1```
+         - Backtrack: ```TableFor3 = TableFor4, TableFor4 = 1, VariablesForLabeling = [6, TableFor2, 1, 1], TableFor2 in 0..1, _19936#=2*TableFor2+7, _19936 in 7..9.```
+         - Calculations for tables seem to be correct! (can either be enough or all 0)!
    - ```constrain_reservation_request_double_booking``` (CLPFD)
       - Tests constraints for double booking so that no table is booked twice during the same time.
       - Test query: ```constrain_reservation_request_double_booking( [reservation_request(0, [1, 4], [1200, _34966, 1], 2, [1, 2], [Table2For0, Table3For0, Table4For0]), reservation_request(1, [1, 4], [1200, _35128, 1], 4, [2, 1], [Table2For1, Table3For1, Table4For1]), reservation_request(2, [1, 4], [1200, _35290, 1], 3, [1, 1], [Table2For2, Table3For2, Table4For2])], VariablesForLabeling ) . ```
-         - Answer: ```VariablesForLabeling = [1, 4, 1200, _34966, Table2For0, Table3For0, Table4For0, 1, 4|...], _35290#>=_34966#<==>_81532, _34966#>=1201#<==>_81556, _35128#>=_34966#<==>_81580, _34966#>=1201#<==>_81604, _35290#>=_35128#<==>_81628, _35290#>=1201#<==>_81652, _35290#>=1201#<==>_81676, _35128#>=1201#<==>_81700, _35128#>=1201#<==>_81724, _81700 in 0..1, _81700#/\_81628#<==>_81772, _81628 in 0..1, _81772 in 0..1, _81652#\/_81772#<==>_81844, _81652 in 0..1, _81844 in 0..1, _81844#/\_81922#<==>_81916, _81844#/\_81946#<==>_81940, _81844#/\_81970#<==>_81964, _81922 in 0..1, Table4For1#=1#<==>_81922, Table4For1#\=Table4For2#<==>_82036, Table4For0#\=Table4For1#<==>_82060, Table4For0#\=Table4For2#<==>_82084, Table4For0#=1#<==>_82108, Table4For0#=1#<==>_82132, _82108 in 0..1, _82184#/\_82108#<==>_82180, _82184 in 0..1, _82184#/\_82234#<==>_82228, _82184#/\_82258#<==>_82252, _81676#\/_82282#<==>_82184, _82234 in 0..1, Table3For0#=1#<==>_82234, Table3For0#\=Table3For2#<==>_82348, Table3For0#\=Table3For1#<==>_82372, Table3For0#=1#<==>_82396, Table3For1#\=Table3For2#<==>_82420, Table3For1#=1#<==>_81946, _81946 in 0..1, _81940 in 0..1, _81940#==>_82420, _82420 in 0..1, _82372 in 0..1, _82580#==>_82372, _82580 in 0..1, _82628#/\_82396#<==>_82580, _82628 in 0..1, _82628#/\_82132#<==>_82672, _82628#/\_82702#<==>_82696, _81724#\/_82726#<==>_82628, _82132 in 0..1, _82672 in 0..1, _82672#==>_82060, _82060 in 0..1, _82702 in 0..1, Table2For0#=1#<==>_82702, Table2For0#\=Table2For2#<==>_82882, Table2For0#=1#<==>_82258, Table2For0#\=Table2For1#<==>_82930, Table2For1#\=Table2For2#<==>_82954, Table2For1#=1#<==>_81970, _81970 in 0..1, _81964 in 0..1, _81964#==>_82954, _82954 in 0..1, _82930 in 0..1, _82696#==>_82930, _82696 in 0..1, _82882 in 0..1, _82252#==>_82882, _82252 in 0..1, _82258 in 0..1, _81724 in 0..1, _82726 in 0..1, _81604#/\_81580#<==>_82726, _81604 in 0..1, _81580 in 0..1, _82396 in 0..1, _82348 in 0..1, _82228#==>_82348, _82228 in 0..1, _81676 in 0..1, _82282 in 0..1, _81556#/\_81532#<==>_82282, _81556 in 0..1, _81532 in 0..1, _82180 in 0..1, _82180#==>_82084, _82084 in 0..1, _82036 in 0..1, _81916#==>_82036, _81916 in 0..1 ```
+         - Answer: ```VariablesForLabeling = [1, 4, 1200, _34966, Table2For0, Table3For0, Table4For0, 1, 4|...], _35290#>=_34966#<==>_19512, _34966#>=1201#<==>_19536, _35128#>=_34966#<==>_19560, _34966#>=1201#<==>_19584, _35290#>=_35128#<==>_19608, _35290#>=1201#<==>_19632, _35290#>=1201#<==>_19656, _35128#>=1201#<==>_19680, _35128#>=1201#<==>_19704, _19680 in 0..1, _19680#/\_19608#<==>_19752, _19608 in 0..1, _19752 in 0..1, _19632#\/_19752#<==>_19824, _19632 in 0..1, _19824 in 0..1, _19824#/\_19902#<==>_19896, _19824#/\_19926#<==>_19920, _19824#/\_19950#<==>_19944, _19902 in 0..1, Table4For1#=1#<==>_19902, Table4For1#\=Table4For2#<==>_20016, Table4For0#\=Table4For1#<==>_20040, Table4For0#\=Table4For2#<==>_20064, Table4For0#=1#<==>_20088, Table4For0#=1#<==>_20112, _20088 in 0..1, _20164#/\_20088#<==>_20160, _20164 in 0..1, _20164#/\_20214#<==>_20208, _20164#/\_20238#<==>_20232, _19656#\/_20262#<==>_20164, _20214 in 0..1, Table3For0#=1#<==>_20214, Table3For0#\=Table3For2#<==>_20328, Table3For0#\=Table3For1#<==>_20352, Table3For0#=1#<==>_20376, Table3For1#\=Table3For2#<==>_20400, Table3For1#=1#<==>_19926, _19926 in 0..1, _19920 in 0..1, _19920#==>_20400, _20400 in 0..1, _20352 in 0..1, _20560#==>_20352, _20560 in 0..1, _20608#/\_20376#<==>_20560, _20608 in 0..1, _20608#/\_20112#<==>_20652, _20608#/\_20682#<==>_20676, _19704#\/_20706#<==>_20608, _20112 in 0..1, _20652 in 0..1, _20652#==>_20040, _20040 in 0..1, _20682 in 0..1, Table2For0#=1#<==>_20682, Table2For0#\=Table2For2#<==>_20862, Table2For0#=1#<==>_20238, Table2For0#\=Table2For1#<==>_20910, Table2For1#\=Table2For2#<==>_20934, Table2For1#=1#<==>_19950, _19950 in 0..1, _19944 in 0..1, _19944#==>_20934, _20934 in 0..1, _20910 in 0..1, _20676#==>_20910, _20676 in 0..1, _20862 in 0..1, _20232#==>_20862, _20232 in 0..1, _20238 in 0..1, _19704 in 0..1, _20706 in 0..1, _19584#/\_19560#<==>_20706, _19584 in 0..1, _19560 in 0..1, _20376 in 0..1, _20328 in 0..1, _20208#==>_20328, _20208 in 0..1, _19656 in 0..1, _20262 in 0..1, _19536#/\_19512#<==>_20262, _19536 in 0..1, _19512 in 0..1, _20160 in 0..1, _20160#==>_20064, _20064 in 0..1, _20016 in 0..1, _19896#==>_20016, _19896 in 0..1 ```
+         - Backtrack: false
          - This answer is obviously hard to validate but when looking at the variables of Tables (Table2For0 etc) it does indeed look as if the system recognizes these can not be 1 at the same time for overlapping reservations, which the constraint should indeed enforce.
    
 - CONVERSION SYSTEM
    - ```sms_to_nlp``` 
-      
+
       - Test if the list of SMS messages links correctly with the list of NLP representations
       - Test query: ```is_extra_processed_sms_inbox(Inbox), sms_to_nlp(Inbox, NlpRepresentation) . ```
          - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on, the, first, of, december], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, december, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, december, for, the, standard, menu, please]],```
-            
-            ```NlpRepresentation = [[[1, 12], [1200, 1], 2, [_55204, 3]], [[1, 12], [1200, 1], 4, [2, 1]], [[1, 12], [1200, 1], 3, [1, 1]]]```
-      
+
+            ```NlpRepresentation = [[[1, 12], [1200, 1], 2, [_1320, 3]], [[1, 12], [1200, 1], 4, [2, 1]], [[1, 12], [1200, 1], 3, [1, 1]]]```
+
+         - Backtrack: false
+
    - ```nlp_to_clp```
       
       - Test if the list of NLP representations links correctly with CLPFD reservation requests representation
       - Test query: ```nlp_to_clp([[[1, 4], [1200, 1], 2, [1, 2]], [[1, 4], [1200, 1], 4, [2, 1]], [[1, 4], [1200, 1], 3, [1, 1]]], ClpRepresention) . ```
-         - Answer: ```ClpRepresention = [reservation_request(0, [1, 4], [1200, _9338, 1], 2, [1, 2], _9316), reservation_request(1, [1, 4], [1200, _9400, 1], 4, [2, 1], _9378), reservation_request(2, [1, 4], [1200, _9462, 1], 3, [1, 1], _9440)]```
+         - Answer: ```ClpRepresention = [reservation_request(0, [1, 4], [1200, _6442, 1], 2, [1, 2], _6420), reservation_request(1, [1, 4], [1200, _6504, 1], 4, [2, 1], _6482), reservation_request(2, [1, 4], [1200, _6566, 1], 3, [1, 1], _6544)]```
+         
+         - Backtrack: false
       
    - ```clp_labeling```
-   
+
       - Test if input list of reservation requests is labelled.
       - Test query: ```clp_labeling([reservation_request(0, [1, 4], [1200, _, 1], 2, [1, 2], _), reservation_request(1, [1, 4], [1200, _, 1], 4, [2, 1], _), reservation_request(2, [1, 4], [1200, _, 1], 3, [1, 1], _)], Reservations) .```
          - Answer: ```Reservations = [reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])]```
-   
-   - ```wasted_space```
-   
-      - Tests if the wasted space minimizer works by checking some samples individually as labelling will use both wasted_space and total_amount combined but the latter has no impact since it is equal for all variations.
+         - Backtrack: ```Reservations = [reservation(0, [1, 4], [1200, 1260, 1], 2, [2, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])]```
+         - Backtrack: ```Reservations = [reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [0, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])]```
+         - It becomes clear that less optimal results (where reservations are rejected etc) are only found after backtracking, suggesting our optimisation is good!
+
+   - Minimizers 
+
+      - Tests if the minimizers work by checking some samples individually.
       - Test query: ```test_textual_output_sample_1([18,3]) .```
          - Prints the reservations from the provided SMS inbox filter to only have first (nth1 index 1) sample on the 18th of March.
          - Answer: At 20h0, 2 people will arrive. They will have the standard menu and sit at the table for two. They will leave at 22h0.
             - Order message: [table,for,2,at,20,:,0,on,18,march]
+         - NOTE: the "slower" minimizer is needed for this output!
          - It is clear that the table for 2 is assigned since that option wastes no space. If you enable backtracking (by removing the cut), it is also clear it is not by luck since tables are assigned in "worsening" order.
-   
+
    - ```sms_to_reservations```
-      
+
       - Tests if SMS inbox can be linked with the made reservations correctly, chaining together all systems.
       - Test query: ```is_extra_processed_sms_inbox( Sms ), sms_to_reservations( Sms, Reservations ) .```
          - Answer: ```Sms = [[table, for, 2, at, 20, :, 0, on, the, first, of, december], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, december, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, december, for, the, standard, menu, please]],```
             ```Reservations = [reservation(0, [1, 12], [1200, 1320, 1], 2, [1, 3], [1, 0, 0]), reservation(1, [1, 12], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 12], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])] ```
-      
+         - Backtracking is again possible to see less viable options, looks great!
+
    - ```reservations_on_day```
       
       - Tests if the list of reservations on a specific day can indeed be linked to the list of reservations.
@@ -196,43 +218,36 @@ Some examples of the performed tests through the interpreter are given below.
          - Answer: ```ReservationsOnDay = []```
       - Test query: ```reservations_on_day([reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])], ReservationsOnDay, [1, 4]) .```
          - Answer: ```ReservationsOnDay = [reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])]```
+      - Seem good!
       
    - ```sort_reservations```
-   
+
       - Tests if the list of reservations does indeed sort correctly based on month>day>start time> end time.
       - Uses a modified version of British museum sort from the lectures.
       - Test query:  ```sort_reservations([reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])], SortedReservations) . ```
          - Answer: ```SortedReservations = [reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])]``` 
          - Indeed, the list is ordered!
-   
+
 - OUTPUT SYSTEM
    - ```textual_display_reservations_on_day```
       - Test if the list of reservations is displayed correctly for a given day.
       - Test query: ```is_extra_processed_sms_inbox( Sms ), sms_to_reservations( Sms, Reservations ), textual_display_reservations_on_day(Sms, Reservations, [1,12]) .```
-         - Answer: prints the reservations from the extra SMS inbox on the first of December.
+         - Answer: prints the reservations from the extra SMS inbox on the first of December. Perfect!
    - ```textual_print_reservations_from_extra_sms```
       - Test if the list of reservations is displayed correctly from the extra SMS inbox on a given day.
       - Test query:  ```textual_print_reservations_from_extra_sms([1,12]) .```
          - Answer: prints the reservations from the extra SMS inbox on the first of December.
-            - At 20h0, 4 people will arrive. They will have the theatre menu and sit at the table for four. They will leave at 21h0.
-               - Order message: [hi,can,i,book,a,place,at,8,pm,for,4,persons,on,the,first,of,december,for,the,theatre,menu,please]
-            - At 20h0, 2 people will arrive. They will have the standard menu and sit at the table for two. They will leave at 22h0.
-               - Order message: [table,for,2,at,20,:,0,on,the,first,of,december]
-            - At 20h0, 3 people will arrive. They will have the standard menu and sit at the table for three. They will leave at 22h0.
-               - Order message: [table,for,3,at,8,pm,on,the,first,of,december,for,the,standard,menu,please]
+      - Perfect! See bottom of Prolog file for a terminal export!
    - ```textual_print_reservations_from_extra_sms2```
       - Same as above but with more samples since it uses the second extra SMS inbox. Demonstrates system is capable of handling "preference".
       - Test query:  ```textual_print_reservations_from_extra_sms2([1,12]) .```
-         - Answer: prints the reservations from the extra SMS inbox on the first of December.
-            - At 19h0, 4 people will arrive. They will have the theatre menu and sit at the table for four. They will leave at 20h0.
-               - Order message: [hi,can,i,book,a,place,preferably,at,8,pm,for,4,persons,on,the,first,of,december,for,the,theatre,menu,please]
-            - At 20h0, 2 people will arrive. They will have the theatre menu and sit at the table for four. They will leave at 21h0.
-               - Order message: [table,for,2,at,20,:,0,on,the,first,of,december,preferably,for,the,standard,menu]
-            - [...]
+         - Answer: prints the reservations from the second extra SMS inbox on the first of December
+      - Perfect! See bottom of Prolog file for a terminal export!
    - ```textual_print_reservations_from_provided_sms```
       - Test if the list of reservations is displayed correctly from the given SMS inbox on a given day.
       - Test query:  ```textual_print_reservations_from_provided_sms([18,3]) .```
          - Answer: prints the reservations from the provided SMS inbox on the 18th of March.
+      - Perfect! See bottom of Prolog file for a terminal export!
    - ```test_textual_output_sample_XXX```
       - Made helpful test predicates to test print of individual samples from the given SMS inbox.
       - use query: ```test_textual_output_sample_XXX( ([18,3]) ) . ``` with XXX in 1..8.
