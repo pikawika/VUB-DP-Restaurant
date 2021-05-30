@@ -13,7 +13,7 @@ The created code was tested on an incremental basis through the interpreter.
 
 
 To test the whole system by generating the final planning, one can use the following query to print the planning for the provided SMS messages on the 18th of march.
-The output of this exact query is also given at the bottom of this file as a copy paste from the terminal.
+The output of this exact query is also given at the bottom of this file as a copy-paste from the terminal.
     textual_print_reservations_from_provided_sms([18,3]) .
 
 
@@ -38,9 +38,9 @@ Testing performed (see README) and general content of system:
             --> with XXX in 1..3
          - use query: test_dcg_sample_all() . 
       - Automated DCG part testing
-	     - The DCG part can be tested in a more automated way by checking whether the following predicates return true
-		    - test_dcg_sample_XXX_passes() . with XXX in 1..8
-			- test_dcg_sample_all() .
+         - The DCG part can be tested in a more automated way by checking whether the following predicates return true
+            - test_dcg_sample_XXX_passes() . with XXX in 1..8
+            - test_dcg_sample_all() .
    - CONSTRAINT SYSTEM:
       - constrain_reservation_request_menu
          - Test constraints for the menu to be a singular allowed menu.
@@ -61,14 +61,14 @@ Testing performed (see README) and general content of system:
       - nlp_to_clp
          - Test if the list of NLP representations links correctly with CLPFD reservation requests representation
       - clp_labeling
-         - Test if input list of reservation requests is labelled.
+         - Test if the input list of reservation requests is labelled.
       - wasted_space
-         - Test if assignment of table with lesser wasted space is indeed performed.
+         - Test if the assignment of the table with lesser wasted space is indeed performed.
       - total_amount, total_rejections & minimizer
-         - total_amount: Test if assignment of most people is indeed performed.
-		 - total_rejections: Test if assignment of least rejections is indeed performed.
-		 - These were done by testing minimizer which is used for labeling and combines wasted_space and total_amount.
-		 - The, by default enabled, faster minimizer uses only total_amount, thus it can be validated by distinctly as well.
+         - total_amount: Test if the assignment of most people is indeed performed.
+         - total_rejections: Test if the assignment of least rejections is indeed performed.
+         - These were done by testing minimizer which is used for labelling and combines wasted_space and total_amount.
+         - The by default enabled faster minimizer uses only the total_amount maximizer, thus it can be validated distinctly as well.
       - sms_to_reservations
          - Tests if SMS inbox can be linked with the made reservations correctly, chaining together all systems.
       - reservations_on_day
@@ -104,16 +104,16 @@ Some things were assumed:
 
 
 Known "bad" things about the code:
-   - The constraint system DOES WORK with "preference" information but behaves identical for a preffered menu/time and a menu/time that is not specified.
-   - The system uses three variables for minimisation, this causes the conversion from SMS messages to final result to take +- 25 minutes for the provided SMS set.
-      - Using the extra SMS inboxes this is a manner of seconds.
-      - Using the minimizer_faster (enabled by default in clp_labeling), which only looks at maxifying the amount of people seated, the process takes about a minute.
+   - The constraint system DOES WORK with "preference" information but behaves identically for a preferred menu/time and a menu/time that is not specified.
+   - The system uses three variables for minimisation, this causes the conversion from SMS messages to the final result to take +- 25 minutes for the provided SMS set.
+      - Using the extra SMS inboxes, this process is a manner of seconds.
+      - Using the minimizer_faster (enabled by default in clp_labeling), which only looks at maximizing the amount of people seated, the process takes about a minute.
 
 
 
 During the WPO it was asked if a TypeScript is needed, which the answer was "no, as long as you have clear examples and their output".
-		 --> These are the examples and output that are available in the README.md, a copy of which is at the bottom of this file
-		 --> The output for the given SMS inbox converted to reservations is also provided at the bottom as a copy paste from the terminal
+         --> These are the examples and output that are available in the README.md, a copy of which is at the bottom of this file
+         --> The output for the given SMS inbox converted to reservations is also provided at the bottom as a copy-paste from the terminal
 
 
 
@@ -277,7 +277,7 @@ In our system the accepted language consists of a few major parts which can be i
    - menu_description: part of the sentence that specifies the preferred menu, can be non-specified. (e.g. "for the standard menu")
    - ending_description: ending part of the sentence. (e.g. "thank you")
 
-A reservation request is a natural language sentence having (some of) the above parts, from which the following following arguments can be extracted:
+A reservation request is a natural language sentence having (some of) the above parts, from which the following arguments can be extracted:
    - Date: day of reservation - [Day, Month] - both integer.
    - Time: time of reservation - [StartTime, Preference] - StartTime is an integer or unbounded and represents the time past in minutes since midnight (00:00), Preference is an integer representing preference.
    - Amount: number of people - integer.
@@ -500,7 +500,7 @@ month(Month) --> [StringMonth], { StringMonth = december, Month = 12} .
 ----------------------------------------------
 
 This subsection takes care of the time_description recognition.
-It should detect StarTime in minutes since midnight and the preference being "fixed", "preferred" or "unspecified" represented as integer.
+It should detect StarTime in minutes since midnight and the preference being "fixed", "preferred" or "unspecified" represented as an integer.
 For this to work a time description should start with "at" or "<preference word> at" followed by a different array of time formats supported.
 NOTE: since we're defining a grammar, a correct hour does not have to take into account the opening hours of the restaurant.
 */
@@ -562,7 +562,7 @@ minute(Minute) --> [Minute], {integer(Minute), Minute >= 0, Minute =< 60} .
 ----------------------------------------------
 
 This subsection takes care of the amount_description recognition.
-It should detect the amount of people that want to make a reservation.
+It should detect the number of people that want to make a reservation.
 Multiple descriptions are accepted to support the given SMS inbox.
 NOTE: since we're defining a grammar, a maximum amount does not have to be taken into account.
 */
@@ -790,10 +790,10 @@ test_dcg_sample_extra_3(Result) :- is_extra_processed_sms_inbox(List), nth1(3,Li
 #                        CONSTRAINT SYSTEM                       #
 ##################################################################
 
-This section will provide the CLP(FD), Constraint Logic Programming with Finite Domains, to perform the scheduling of the restaurants reservations.
-In Prolog one can think of the constraint system as part of the unifaction process.
+This section will provide the CLP(FD), Constraint Logic Programming with Finite Domains, to perform the scheduling of the restaurant's reservations.
+In Prolog one can think of the constraint system as part of the unification process.
 Indeed, we associate a set of “allowed values” with each variable, and then any attempt to unify it with something “not allowed” will fail.
-Doing this will "prune" the solution trees branches that are known to fail early on, enhacing the execution speed.
+Doing this will "prune" the solution trees branches that are known to fail early on, enhancing the execution speed.
 
 A reservation is represented as [Id, Date, Time, Amount, Menu, Tables]:
    - Id: used to link reservation to original messsage, equal to nth0 of initial SMS inbox - integer
@@ -835,7 +835,7 @@ Remember that the restaurant has 2 menu's currently, standard and theatre, both 
    - Must be a legal menu
    - Only one menu must be chosen
 
-	NOTE: makes a new list since menu variables are already ground when prefferable and we need them as variables
+	NOTE: makes a new list since menu variables are already ground when preferable and we need them as variables
  */
 constrain_reservation_request_menu([], [], []) .
 
@@ -877,9 +877,9 @@ The internal representation of a time variable is a list: [StartTime, EndTime, T
    - When time is fixed we keep the variable ground, otherwise it can be changed.
    - During opening hours.
    - Rounded to specified rounding.
-   - Long enough for chosen menu.
+   - Long enough for the chosen menu.
 
-	NOTE: makes a new list since time variables are already ground when prefferable and we need them as variables
+	NOTE: makes a new list since time variables are already ground when preferable and we need them as variables
  */
 constrain_reservation_request_time([], [], []) .
 
@@ -920,7 +920,7 @@ constrain_reservation_request_time([reservation_request(Id, Date, [StartTime, En
 ----------------------------------------------
 
 This subsection is responsible for constraining the table variables of a reservation.
-Remember that there are three tables with different capicities.
+Remember that there are three tables with different capacities.
 Remember, the internal representation of a table variable is a list: [TableFor2, TableFor3, TableFor4], all boolean integers
 */
 
@@ -953,16 +953,16 @@ constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, Amou
 ----------------------------------------------
 
 This subsection is responsible for constraining double booking of a table.
-A table is double booked if a reservation's date and time overlapses with another reservation's date and time that has the same table assigned.
+A table is double-booked if a reservation's date and time overlap with another reservation's date and time that has the same table assigned.
 An edge case is where one reservation starts at the moment another ends, this is NOT an overlap.
 */
 
-/* In order to prevent double booking a double iterative process is performed:
-	- First loop (constrain_reservation_request_double_booking_iter):
-		- Initiate second loop with "already processed" reservation untill then
-	- Second loop (constrain_reservation_request_double_booking_syncer):
-		- Check if there are reservation that are already processed that occur on overlapping time
-		   - If that is the case, constrain that tables can not be shared
+/* To prevent double-booking a double iterative process is performed:
+    - First loop (constrain_reservation_request_double_booking_iter):
+        - Initiate the second loop with "already processed" reservation until then
+    - Second loop (constrain_reservation_request_double_booking_syncer):
+        - Check if there are reservation that is already processed that occur on overlapping time
+           - If that is the case, constrain that tables can not be shared
  */
 constrain_reservation_request_double_booking( ReservationRequestList, VariablesForLabeling ) :- constrain_reservation_request_double_booking_iter([], ReservationRequestList, VariablesForLabeling) .
 
@@ -1007,7 +1007,7 @@ constrain_reservation_request_double_booking_syncer([reservation_request(_, [Day
 ##################################################################
 
 This section will provide code for converting between different stages of the system as well as chain these stages together.
-It will also be responsible for performing the labeling on the CLP(FD).
+It will also be responsible for performing the labelling on the CLP(FD).
 */
 
 /* 
@@ -1669,8 +1669,6 @@ It is best viewed in a markdown editor.
 
 /* 
 
-
-
 # Declarative Programming project @ VUB 2020-2021 
 
 ## Table of contents
@@ -1808,7 +1806,7 @@ Some examples of the performed tests through the interpreter are given below.
    -  Automated testing
       -  The DCG part can be tested in a more automated way by checking whether the following predicates return true
          -  ```test_dcg_sample_XXX_passes() .``` with XXX in 1..8
-            -  Example: ```test_dcg_sample_1_passes() .```  should be true (and it is!).
+            - Example: ```test_dcg_sample_1_passes() .```  should be true (and it is!).
          -  ```test_dcg_sample_all() .```  should be true (and it is!).
 
 - CONSTRAINT SYSTEM
@@ -1864,9 +1862,7 @@ Some examples of the performed tests through the interpreter are given below.
    - ```nlp_to_clp```
 
       - Test if the list of NLP representations links correctly with CLPFD reservation requests representation
-
       - Test query: ```nlp_to_clp([[[1, 4], [1200, 1], 2, [1, 2]], [[1, 4], [1200, 1], 4, [2, 1]], [[1, 4], [1200, 1], 3, [1, 1]]], ClpRepresention) . ```
-
          - Answer: ```ClpRepresention = [reservation_request(0, [1, 4], [1200, _6442, 1], 2, [1, 2], _6420), reservation_request(1, [1, 4], [1200, _6504, 1], 4, [2, 1], _6482), reservation_request(2, [1, 4], [1200, _6566, 1], 3, [1, 1], _6544)]```
 
          - Backtrack: false
@@ -1943,6 +1939,5 @@ Some examples of the performed tests through the interpreter are given below.
          - Prints the reservations from the provided SMS inbox filter to only have first (nth1 index 1) sample on the 18th of March.
          - Answer: At 20h0, 2 people will arrive. They will have the standard menu and sit at the table for two. They will leave at 22h0.
             - Order message: [table,for,2,at,20,:,0,on,18,march]
-
 
 */
