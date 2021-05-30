@@ -33,6 +33,7 @@ Some things were assumed:
 
 - Since the text messages are said to be processed no operations such as downcase_atom (lowercase transformation) are done.
 - Since we could make the NLP portion endlessly big, it is made so that only the examples and very minor extra's are accepted.
+   - This means some assumptions, such as the time_description required "at" to be present, are made. These are obvious where the descriptions are formulated.
 - Since I'm no expert in linguistics the naming for different parts of sentences might be odd.
    - It is also possible to make weird sentences such as "book I can a table for 2" since both "book" and "can" are seen as a verb.
 - No constraint needed for "Booking takes place at least a day before" (confirmed by Homer).

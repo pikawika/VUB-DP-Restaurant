@@ -73,6 +73,7 @@ Testing performed and general content of system:
 Some things were assumed:
    - Since the text messages are said to be processed no operations such as downcase_atom (lowercase transformation) are done.
    - Since we could make the NLP portion endlessly big, it is made so that only the examples and very minor extra's are accepted.
+      - This means some assumptions, such as the time_description required "at" to be present, are made. These are obvious where the descriptions are formulated.
    - Since I'm no expert in linguistics the naming for different parts of sentences might be odd.
       - It is also possible to make weird sentences such as "book I can a table for 2" since both "book" and "can" are seen as a verb.
    - No constraint needed for "Booking takes place at least a day before" (confirmed by Homer).
@@ -99,6 +100,16 @@ STUDENT INFO:
     
 */
 
+
+
+
+
+
+
+
+
+
+
 /* 
 ##################################################################
 #                         LIBRARY IMPORTS                        #
@@ -115,19 +126,28 @@ The following code will import the required libraries:
 				library(clpfd)] ).
 
 
+
+
+
+
+
+
+
+
+
 /* 
 ##################################################################
 #                       GENERAL PREDICATES                       #
 ##################################################################
 
-Some global queries to ensure uniformity.
+Some global predicates to ensure uniformity.
 */
 
-/* Succeeds when the first parameter is the integer representation of the second parameter's menu term */
+/* Succeeds when the first parameter is the integer representation of the second parameter's menu */
 is_menu(1, standard) .
 is_menu(2, theatre) .
 
-/* Succeeds when the first parameter is the integer representation of the second parameter's preference term  */
+/* Succeeds when the first parameter is the integer representation of the second parameter's preference  */
 is_preference(1, fixed) .
 is_preference(2, preferred) .
 is_preference(3, unspecified) .
@@ -143,20 +163,30 @@ minutes_since_midnight(MinuteSinceMidnight, [Hour, Minute]) :-
 is_opening_time(Time) :- minutes_since_midnight(Time, [19, 00]) .
 is_closing_time(Time) :- minutes_since_midnight(Time, [23, 00]) .
 
-/* Succeds when the only parameter represents the time rounding. This is done for performance reasons.
-	E.g. if set to 60 the constraint system will check that the times a mutiple of 60 and thus a time where the minutes is 0. */
+/* Succeds when the parameter represents the time rounding. This is done for performance reasons.
+	E.g. if set to 60 the constraint system will check that reservation times are mutiple of 60 and thus times where the minutes are equal to 0. */
 is_time_rounding(60) .
+
+
+
+
+
+
+
+
+
+
 
 /* 
 ##################################################################
 #                            SMS INBOX                           #
 ##################################################################
 
-The following code provides the pre-processed SMS inbox so that it can be easily used for testing purposes.
+The following code provides the pre-processed SMS inboxes so that it can be easily used for testing purposes.
 */
 
 /* Succeeds when its argument represents the pre-processed sms inbox provided by the assignment. */
-% SMS inbox with preffered things filter out is used by default since constrain doesn't recognize them.
+% NOTE: SMS inbox with preffered things filter out is used by default since constrain doesn't recognize them. --> comment this one out and enable the other one when using made test predicates.
 is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 						[please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th],
 						[can,i,book,a,table,at,9,pm,for,2,people,on,the,18,th,of,march,for,the,standard,menu,please],
@@ -176,10 +206,19 @@ is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 
 
 
-/* Succeeds when its argument represents the extra pre-processed sms inbox provided by myself to demonstrate generality. */
+/* Succeeds when its argument represents the extra pre-processed sms inbox provided by me to demonstrate generality. */
 is_extra_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,april],
 								[hi,can,i,book,a,place,at,8,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please],
 								[table,for,3,at,8,pm,on,the,first,of,april,for,the,standard,menu,please]] ) .
+
+
+
+
+
+
+
+
+
 
 
 /* 
@@ -190,25 +229,26 @@ is_extra_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,april],
 The following code implements the Definite Clause Grammars (DCGs).
 DCGs are a facility in Prolog which makes it easy to define languages according to grammar rules.
 
-In our system the accepted grammers consist of a few majour parts which can be in different orders:
-   - introduction description: introductory part of sentence. (e.g. "we would like to order a table")
-   - amount_description: part of sentence that specifies the amount of people. (e.g. "for 2 people")
-   - time_description: part of sentence that specifies the time of the reservation, can be non-specified. (e.g. "8 pm")
-   - date_description: part of sentence that specifies the date of the reservation. (e.g. "first of march")
-   - menu_description: part of sentence that specifies the preffered menu, can be non-specified. (e.g. "for the standard menu")
-   - ending_description: ending part of sentence. (e.g. "thank you")
+In our system the accepted grammars consist of a few major parts which can be in different orders:
+   - introduction description: introductory part of the sentence. (e.g. "we would like to order a table")
+   - amount_description: part of the sentence that specifies the number of people. (e.g. "for 2 people")
+   - time_description: part of the sentence that specifies the time of the reservation, can be non-specified. (e.g. "at 8 pm")
+   - date_description: part of the sentence that specifies the date of the reservation. (e.g. "on the first of march")
+   - menu_description: part of the sentence that specifies the preferred menu, can be non-specified. (e.g. "for the standard menu")
+   - ending_description: ending part of the sentence. (e.g. "thank you")
 
-A reservation request is a natural language sentence having the above parts from wich the following following arguments can be extracted:
-   - Date: day of reservation - [Day, Month] - both integer
-   - Time: time of reservation - [Hour, Minute, Preference] - Hour and Minute are integers or unbounded and Preference is an integer representing preference
-   - Amount: number of people - integer
-   - Menu: chosen menu - [Menu, Preference] - Menu is an integer representing the Menu and Preference is also an integer representing preference
+A reservation request is a natural language sentence having the above parts from which the following following arguments can be extracted:
+   - Date: day of reservation - [Day, Month] - both integer.
+   - Time: time of reservation - [StartTime, Preference] - StartTime is an integer or unbounded and represents the time in minutes since 00:00, Preference is an integer representing preference.
+   - Amount: number of people - integer.
+   - Menu: chosen menu - [Menu, Preference] - Menu is an integer representing the Menu and Preference is also an integer representing preference.
 */
 
+/* A reservatop, request is a recognized sentence with it's extracted values. */
 reservation_request([Date, Time, Amount, Menu]) --> sentence([Date, Time, Amount, Menu] ) . 
 
 /* The following sentences include all parts, alternatives where optional parts are left out are below.
-    The alternatives are handled separately as allowing empty values for sentence parts would cause some of the following sentences to be equal and thus produce multiple true values in some cases. */
+    --> The alternatives are handled separately as allowing empty values for sentence parts would cause some of the following sentences to be equal and thus produce multiple true values in some cases. */
 sentence([Date, Time, Amount, Menu]) --> 
 	introduction_description,
 	amount_description(Amount),
@@ -248,6 +288,7 @@ sentence([Date, Time, Amount, Menu]) -->
 	menu_description(Menu),
 	time_description(Time),
 	ending_description .
+
 
 
 /* The following sentences include all parts except menu description. */
@@ -284,6 +325,7 @@ sentence([Date, Time, Amount, Menu]) -->
 	ending_description .
 
 
+
 /* The following sentences include all parts except time description. */
 sentence([Date, Time, Amount, Menu]) --> 
 	introduction_description,
@@ -309,6 +351,8 @@ sentence([Date, Time, Amount, Menu]) -->
 	no_time_description(Time),
 	ending_description .
 
+
+
 /* The following sentences include all parts except time and menu description. */
 sentence([Date, Time, Amount, Menu]) --> 
 	introduction_description,
@@ -327,6 +371,9 @@ sentence([Date, Time, Amount, Menu]) -->
 	ending_description .
 
 
+
+
+
 /* 
 ----------------------------------------------
 |       NLP SYSTEM: NUMBER RECOGNIZERS       |
@@ -339,6 +386,10 @@ positive_integer(X) --> [X], {integer(X), X > 0} .
 /* Succeeds when the parameter is equal to the parsed nonegative integer. */
 nonnegative_integer(X) --> [X], {integer(X), X >= 0} .
 
+
+
+
+
 /* 
 ----------------------------------------------
 |        NLP SYSTEM: DATE RECOGNIZERS        |
@@ -349,6 +400,8 @@ nonnegative_integer(X) --> [X], {integer(X), X >= 0} .
 date_description([Day, Month]) --> [on], date([Day, Month]) .
 date_description([Day, Month]) --> [on, the], date([Day, Month]) .
 
+
+
 /* Succeeds when the parameter (Date = [Day, Month]) is equal to the parsed textual representation of a date (e.g. 23/12, 23 march, ...). */
 date([Day, Month]) --> day(Day), month(Month) .
 date([Day, Month]) --> month(Month), day(Day) .
@@ -357,8 +410,12 @@ date([Day, Month]) --> month(Month), day(Day), [th] .
 date([Day, Month]) --> day(Day), ['/'], month(Month) .
 date([Day, Month]) --> day(Day), [th, of], month(Month) .
 
+
+
 /* Succeeds when a correct day integer (1 - 31) is parsed and equal to its parameter. */
 day(Day) --> [Day], { integer(Day), Day >= 1, Day =< 31 } .
+
+
 
 /* Succeeds when parsed textual day (e.g. first) is equal to the integer representation in the parameter (e.g. first as 1).
 	Note: since no examples from the given message inbox had this, only a couple are provided as proof-of-concept. */
@@ -366,8 +423,12 @@ day(Day) --> [StringDay], { StringDay = first, Day = 1 } .
 day(Day) --> [StringDay], { StringDay = second, Day = 2 } .
 day(Day) --> [StringDay], { StringDay = third, Day = 3 } .
 
+
+
 /* Succeeds when a correct month integer (1 - 12) is parsed and equal to its parameter. */
 month(Month) --> [Month], { integer(Month), Month >= 1, Month =< 12 } .
+
+
 
 /* Succeeds when parsed textual month (e.g. march) is equal to integer representation in parameter (e.g. 3) */
 month(Month) --> [StringMonth], { StringMonth = january, Month = 1} .
@@ -384,6 +445,9 @@ month(Month) --> [StringMonth], { StringMonth = november, Month = 11} .
 month(Month) --> [StringMonth], { StringMonth = december, Month = 12} .
 
 
+
+
+
 /* 
 ----------------------------------------------
 |        NLP SYSTEM: TIME RECOGNIZERS        |
@@ -391,7 +455,7 @@ month(Month) --> [StringMonth], { StringMonth = december, Month = 12} .
 */
 
 /* Succeeds when the parameter (Time = [StartTime, Preference]) is equal to the parsed textual time description.
-	StartTime is represented as minutes since midnight in its final form as this will make the final system easier. */
+	StartTime is represented as minutes since midnight in its final form as this will make the final system easier to work with. */
 time_description([StartTime, Preference]) --> 
 	[at], time([Hour, Minute]),
 	{minutes_since_midnight(StartTime, [Hour, Minute]), is_preference(Preference, fixed)} .
@@ -402,8 +466,12 @@ time_description([StartTime, Preference]) -->
 
 no_time_description([_StartTime, Preference]) --> [], {is_preference(Preference, unspecified)} .
 
+
+
 /* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed 24 hour time representation (e.g. 14:00). */
 time([Hour, Minute]) --> hour(Hour), [':'], minute(Minute) .
+
+
 
 /* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed am/pm time representation (e.g. 8 pm or 8 pm 30). */
 time([Hour, Minute]) --> hour(Hour), [am], minute(Minute) .
@@ -412,10 +480,14 @@ time([Hour, 0]) --> hour(Hour), [am] .
 time([Hour, Minute]) --> hour_pm(Hour), [pm], minute(Minute) .
 time([Hour, 0]) --> hour_pm(Hour), [pm] .
 
+
+
 /* Succeeds when the parameter (Time = [Hour, Minute]) is equal to the parsed oclock representation (e.g. 7 oclock).
 	NOTE: assumption is made that oclock is in the pm notation as this is the only time the restaurant is open. */
 time([Hour, Minute]) --> hour_pm(Hour), [oclock], minute(Minute) .
 time([Hour, 0]) --> hour_pm(Hour), [oclock] .
+
+
 
 /* Succeeds when the paramater (Hour) is equal to textual represenatation) */
 hour(Hour) -->[Hour], {integer(Hour), Hour > 0, Hour =< 23} .
@@ -424,8 +496,13 @@ hour_pm(Hour) -->
 	RawHour >= 1, RawHour =< 12,
 	Hour is RawHour + 12} .
 
+
+
 /* Succeeds when the paramater (Minute) is equal to parsed textual represenatation. (e.g. 00) */
 minute(Minute) --> [Minute], {integer(Minute), Minute >= 0, Minute =< 60} .
+
+
+
 
 
 /* 
@@ -442,8 +519,13 @@ amount_description(Amount) --> [for, a, party, of], amount(Amount), humans .
 amount_description(Amount) --> amount(Amount), humans .
 amount_description(Amount) --> [book], amount(Amount), humans, [in] .
 
+
+
 /* Succeeds when the parameter (Amount) is equal to the parsed textual representation of a positive integer representing the amount. */
 amount(Amount) --> positive_integer(Amount) .
+
+
+
 
 
 /* 
@@ -461,10 +543,16 @@ menu_description([Menu, Preference]) --> preference, [for], menu(Menu), [menu], 
 
 no_menu_description([_Menu, Preference]) --> [], {is_preference(Preference, unspecified)} .
 
+
+
 /* Succeeds when the parameter (Menu) is equal to the textual representation of an allowed menu.
 	This abstraction makes it easier to add more menus down the line. */
 menu(Menu) --> [RawMenu], {RawMenu = theatre, is_menu(Menu, RawMenu)} .
 menu(Menu) --> [RawMenu], {RawMenu = standard, is_menu(Menu, RawMenu) } .
+
+
+
+
 
 /* 
 ----------------------------------------------
@@ -485,32 +573,46 @@ introduction_description --> greeting, verb_description, noun_description .
 introduction_description --> greeting, gratitude, verb_description, noun_description .
 introduction_description --> noun_description .
 
+
+
 /* Succeeds when parsed text represent a verb part of a sentce (e.g. can we have). */
 verb_description --> verb, pronoun, verb .
 verb_description --> pronoun, verb .
 verb_description --> verb, pronoun .
 
+
+
 /* Succeeds when parsed text represent a noun part of a sentce (e.g. a table). */
 noun_description --> article, noun .
 noun_description --> noun .
+
+
 
 /* Succeeds when parsed text represent an ending for the reservation, can be empty (e.g. thanks). */
 ending_description --> [] .
 ending_description --> gratitude .
 
+
+
 /* Succeeds when parsed text represent a greeting */
 greeting --> [hello] .
 greeting --> [hi] .
+
+
 
 /* Succeeds when parsed text represent a gratitude */
 gratitude --> [please] .
 gratitude --> [thanks] .
 gratitude --> [thank, you] .
 
+
+
 /* Succeeds when parsed text represent a pronoun */
 pronoun --> [i] .
 pronoun --> [we] .
 pronoun --> [us] .
+
+
 
 /* Succeeds when parsed text represent a verb (e.g. can, would, like) */
 verb --> [can] .
@@ -519,9 +621,13 @@ verb --> [would, like] .
 verb --> [reserve] .
 verb --> [book] .
 
+
+
 /* Succeeds when parsed text represent an article (e.g. a, the) */
 article --> [a] .
 article --> [the] .
+
+
 
 /* Succeeds when parsed text represent a noun (e.g. table, place) */
 noun --> [table] .
@@ -529,15 +635,27 @@ noun --> [place] .
 noun --> [spot] .
 noun --> [reservation] .
 
+
+
 /* Succeeds when parsed text represent a preference (e.g. preferably) */
 preference --> [preferably] .
 preference --> [prefering] .
+
+
 
 /* Succeeds when parsed text represent a synonym for a group of humans (e.g. people, persons) */
 humans --> [people] .
 humans --> [persons] .
 humans --> [person] .
 humans --> [of, us] .
+
+
+
+
+
+
+
+
 
 
 /* 
@@ -557,9 +675,13 @@ test_dcg_sample_6(Result) :- is_processed_sms_inbox(List), nth1(6,List,Sample), 
 test_dcg_sample_7(Result) :- is_processed_sms_inbox(List), nth1(7,List,Sample), reservation_request( Result, Sample, []) .
 test_dcg_sample_8(Result) :- is_processed_sms_inbox(List), nth1(8,List,Sample), reservation_request( Result, Sample, []) .
 
+
+
 test_dcg_sample_extra_1(Result) :- is_extra_processed_sms_inbox(List), nth1(1,List,Sample), reservation_request( Result, Sample, []) .
 test_dcg_sample_extra_2(Result) :- is_extra_processed_sms_inbox(List), nth1(2,List,Sample), reservation_request( Result, Sample, []) .
 test_dcg_sample_extra_3(Result) :- is_extra_processed_sms_inbox(List), nth1(3,List,Sample), reservation_request( Result, Sample, []) .
+
+
 
 test_dcg_sample_all() :- 
 	test_dcg_sample_1( _ ),
@@ -574,6 +696,15 @@ test_dcg_sample_all() :-
    	test_dcg_sample_extra_2( _ ),
    	test_dcg_sample_extra_3( _ ) .
 
+
+
+
+
+
+
+
+
+
 /* 
 ##################################################################
 #                        CONSTRAINT SYSTEM                       #
@@ -582,10 +713,10 @@ test_dcg_sample_all() :-
 The following code implements the CLP(FD), Constraint Logic Programming with Finite Domains, to perform the scheduling of the restaurant.
 In Prolog one can think of the constraint system as part of the unifaction process.
 Indeed, we associate a set of “allowed values” with each variable, and then any attempt to unify it with something “not allowed” will fail.
-Doing this will "prune" the solution trees branches that are known to fail, due to the failed constraint, enhacing the execution speed.
+Doing this will "prune" the solution trees branches that are known to fail early on, enhacing the execution speed.
 
-A reservation is represented as [Id, Date, StartTime, Endtime, Amount, Menu, Table]:
-   - Id: used to link reservation to original messsage - integer
+A reservation is represented as [Id, Date, Time, Amount, Menu, Tables]:
+   - Id: used to link reservation to original messsage, equal to nth0 of initial SMS inbox - integer
    - Date: date for reservation - [Day, Month], both integer
    - Time: time the customer is expected to come and leave and its preference - [StartTime, EndTime, TimePreference] - StartTime and EndTime represented in minutes since midnight (integer), TimePreference as integer representation
    - Amount: number of people that have made a reservation - integer
@@ -593,13 +724,25 @@ A reservation is represented as [Id, Date, StartTime, Endtime, Amount, Menu, Tab
    - Tables: assigned tables for group - [TableFor2, TableFor3, TableFor4], all boolean integers
 
 The following concepts are constraint:
-   - Time
-      - Must be in opening hours
-	  - Must be long enough for menu
-   - Constraints for reservation tables
-      - Tables must be able to seat all people
+   - constrain_reservation_request_menu
+      - Menu must be singular allowed menu.
+   - constrain_reservation_request_time
+      - Time must be:
+	     - During opening hours.
+		 - Rounded to specified rounding.
+		 - Long enough for chosen menu.
+   - constrain_reservation_request_table
+      - Puts constrains on tables (and amount) in general:
+	     - Amount of people must not exceed maximum capacity (9).
+		 - Reserved tables must be able to seat all people.
+   - constrain_reservation_request_double_booking
+      - Constraints for double booking so that no table is booked twice during the same time.
 
 */
+
+
+
+
 
 /* 
 ----------------------------------------------
@@ -617,6 +760,8 @@ NOTE: these constraints are a bit dull and perhaps redundant.
  */
 constrain_reservation_request_menu([], []) .
 
+
+
 constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _Tables) | OtherReservationRequests], [ Menu | OtherVariablesForLabeling]) :- 
 	Menu in 1..2,
 	is_menu(StandardMenu, standard),
@@ -627,6 +772,9 @@ constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amou
 	constrain_reservation_request_menu(OtherReservationRequests, OtherVariablesForLabeling) .
 
 
+
+
+
 /* 
 ----------------------------------------------
 |                  CLP: Time                 |
@@ -634,15 +782,17 @@ constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amou
 
 The below code is responsible for constraining the time variables of a reservation.
 Remember that the restaurant (and kitchen) is open from 19:00 - 23:00.
-The internal representation of a time variable is a list: [Hour, Minute], both being integers.
+The internal representation of a time variable is a list: [StartTime, EndTime, TimePreference], all integers.
 */
 
 /* Constraints for reservation time:
-   - Must be in opening hours
-   - Time must be rounded to specified rounding
-   - Must be long enough for menu
+   - During opening hours.
+   - Rounded to specified rounding.
+   - Long enough for chosen menu.
  */
 constrain_reservation_request_time([], []) .
+
+
 
 constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, EndTime, _TimePreference], _Amount, [Menu, _MenuPreference], _Tables) | OtherReservationRequests], [ StartTime, EndTime, Menu | OtherVariablesForLabeling]) :- 
 	is_opening_time(OpeningTime),
@@ -662,6 +812,10 @@ constrain_reservation_request_time([reservation_request(_Id, _Date, [StartTime, 
 	
 	constrain_reservation_request_time(OtherReservationRequests, OtherVariablesForLabeling) .
 
+
+
+
+
 /* 
 ----------------------------------------------
 |                 CLP: Tables                |
@@ -673,10 +827,12 @@ Remember, the internal representation of a table variable is a list: [TableFor2,
 */
 
 /* Constraints for reservation tables:
-   - Amount of people must not exceed maximum capacity (9)
-   - Tables must be able to seat all people
+   - Amount of people must not exceed maximum capacity (9).
+   - Tables must be able to seat all people.
  */
 constrain_reservation_request_table([], []) .
+
+
 
 constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservationRequests], [ Amount, TableFor2, TableFor3, TableFor4 | OtherVariablesForLabeling]) :- 
 	Amount in 1..9,
@@ -689,6 +845,10 @@ constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, Amou
 	
 	constrain_reservation_request_table(OtherReservationRequests, OtherVariablesForLabeling) .
 
+
+
+
+
 /* 
 ----------------------------------------------
 |             CLP: Double booking            |
@@ -696,7 +856,7 @@ constrain_reservation_request_table([reservation_request(_Id, _Date, _Time, Amou
 
 The below code is responsible for constraining double booking of a table.
 A table is double booked if a reservation's date and time overlapses with another reservation's date and time that has the same table assigned.
-Remember, the internal representation of a table variable is a list: [TableFor2, TableFor3, TableFor4], all boolean integers
+An edge case is where one reservation starts at the moment another ends.
 */
 
 /* In order to prevent double booking a double iterative process is performed:
@@ -704,12 +864,13 @@ Remember, the internal representation of a table variable is a list: [TableFor2,
 		- Initiate second loop with "already processed" reservation untill then
 	- Second loop (constrain_reservation_request_double_booking_syncer):
 		- Check if there are reservation that are already processed that occur on overlapping time
-		- If that is the case, constrain that tables can not be shared
+		   - If that is the case, constrain that tables can not be shared
  */
 constrain_reservation_request_double_booking( ReservationRequestList, VariablesForLabeling ) :- constrain_reservation_request_double_booking_iter([], ReservationRequestList, VariablesForLabeling) .
 
-constrain_reservation_request_double_booking_iter(_ProcessedReservationRequestList, [], []) .
 
+
+constrain_reservation_request_double_booking_iter(_ProcessedReservationRequestList, [], []) .
 constrain_reservation_request_double_booking_iter(ProcessedReservationRequestList, [reservation_request(_Id, [Day, Month], [StartTime, EndTime, _TimePreference], _Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservationRequests], [ Day, Month, StartTime, EndTime, TableFor2, TableFor3, TableFor4 | OtherVariablesForLabeling]) :- 
 	constrain_reservation_request_double_booking_syncer(ProcessedReservationRequestList, reservation_request(_, [Day, Month], [StartTime, EndTime, _], _, _, [TableFor2, TableFor3, TableFor4])), 
 
@@ -717,8 +878,8 @@ constrain_reservation_request_double_booking_iter(ProcessedReservationRequestLis
 	constrain_reservation_request_double_booking_iter(NewProcessedReservationRequestList, OtherReservationRequests, OtherVariablesForLabeling) .
 
 
-constrain_reservation_request_double_booking_syncer([], _ReservationRequestToSync) .
 
+constrain_reservation_request_double_booking_syncer([], _ReservationRequestToSync) .
 constrain_reservation_request_double_booking_syncer([reservation_request(_, [Day, Month], [StartTime, EndTime, _], _, _, [TableFor2, TableFor3, TableFor4]) | OtherReservationRequests ], reservation_request(_, [DayOfSync, MonthOfSync], [StartTimeOfSync, EndTimeOfSync, _], _, _, [TableFor2OfSync, TableFor3OfSync, TableFor4OfSync])) :-
 	( Month #= MonthOfSync ) #<==> EqualMonth,
 	( Day #= DayOfSync ) #<==> EqualDay,
@@ -730,6 +891,15 @@ constrain_reservation_request_double_booking_syncer([reservation_request(_, [Day
 	( Overlap #/\ TableFor3 #= 1 ) #==> ( TableFor3 #\= TableFor3OfSync),
 	( Overlap #/\ TableFor4 #= 1 ) #==> ( TableFor4 #\= TableFor4OfSync),
 	constrain_reservation_request_double_booking_syncer(OtherReservationRequests, reservation_request(_, [DayOfSync, MonthOfSync], [StartTimeOfSync, EndTimeOfSync, _], _, _, [TableFor2OfSync, TableFor3OfSync, TableFor4OfSync])).
+
+
+
+
+
+
+
+
+
 
 /* 
 ##################################################################
@@ -743,10 +913,6 @@ The below code is responsible for converting between different stages of the sys
 ----------------------------------------------
 |                  SMS TO NLP                |
 ----------------------------------------------
-
-The code below is responsible for linking SLS and NLP representations.
-
-
 */
 
 /* Links a list of SMS messages to a list of NLP representations. */
@@ -757,32 +923,34 @@ sms_to_nlp( [Sms | SmsRest], [Nlp | NlpRest] ) :-
 	sms_to_nlp(SmsRest, NlpRest) .
 
 
+
+
+
 /* 
 ----------------------------------------------
 |                  NLP TO CLP                |
 ----------------------------------------------
-
-The code below is responsible for linking NLP and CLP representations.
 */
 
-
 /* Links a list of NLP representations to a list of CLP representations.
-	Id is the nth0 element location of the input NlpList.
-	The CLP representation needs a different time notation for ease of use (minutes since midnight), whilst the NLP representation used its time representation for ease of reading (24 hour representation). */
+	Id is the nth0 element location of the input NlpList. */
 nlp_to_clp( NlpList, ClpList ) :- nlp_to_clp_iter(0, NlpList, ClpList) .
 
-nlp_to_clp_iter(_Id, [], []) .
 
+
+nlp_to_clp_iter(_Id, [], []) .
 nlp_to_clp_iter( Id, [[[Day, Month], [StartTime, TimePreference], Amount, [Menu, MenuPreference]] | NlpRest], [reservation_request(Id, [Day, Month], [StartTime, _ClpEndTime, TimePreference], Amount, [Menu, MenuPreference], _ClpTables) | ClpRest] ) :-
 	NewId is Id + 1,
 	nlp_to_clp_iter(NewId, NlpRest, ClpRest) .
+
+
+
+
 
 /* 
 ----------------------------------------------
 |              CLP TO RESERVATIONS           |
 ----------------------------------------------
-
-The code below is responsible for performing the labeling on the CLP representation.
 */
 
 /* Performs labeling using FFC and all constraints for the input list which is a CLP representation */
@@ -795,36 +963,43 @@ clp_labeling(ClpList) :-
 	wasted_space(ClpList, _Minimization),
 	labeling( [ffc], Variables ) .
 
-wasted_space([], _Minimization) .
 
+
+/* variable that could be used for minimization as to not waste space by assigning a too big table to someone - does not work sadly due to non ground error */
+wasted_space([], _Minimization) .
 wasted_space([reservation_request(_Id, _Date, _Time, Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | ClpRest], Minimization) :-
 	TotalSeatingCapacity #= 2*TableFor2 + 3*TableFor3 + 4*TableFor4,
 	NewMinimization #= Minimization + (TotalSeatingCapacity - Amount),
 	wasted_space(ClpRest, NewMinimization) .
 
+
+
+
+
 /* 
 ----------------------------------------------
 |    RESERVATION REQUESTS TO RESERVATIONS    |
 ----------------------------------------------
-
-The code below is responsible for converting reservation requests to reservation, note that this does nothing more then changing the leading term.
 */
 
-/* Converts reservation requests to reservation by changing leading term */
+/* Converts reservation requests to reservation by changing leading term.
+	NOTE: this is nothing more then a representation change and does not perform an actual action. */
 reservationrequests_to_reservation([], []) .
 
 reservationrequests_to_reservation([reservation_request(Id, Date, Time, Amount, Menu, Tables) | OtherReservationRequests], [reservation(Id, Date, Time, Amount, Menu, Tables) | OtherReservations]) :-
 	reservationrequests_to_reservation(OtherReservationRequests, OtherReservations) .
 
+
+
+
+
 /* 
 ----------------------------------------------
 |             SMS TO RESERVATIONS            |
 ----------------------------------------------
-
-The code below is responsible for converting the initial SMS list to a list of reservations
 */
 
-/* Unifies SMS inbox with the made reservations */
+/* Unifies SMS inbox with the made reservations. */
 sms_to_reservations(Sms, Reservations) :-
 	sms_to_nlp( Sms, Nlp ),
 	nlp_to_clp( Nlp, ReservationRequests),
@@ -832,33 +1007,41 @@ sms_to_reservations(Sms, Reservations) :-
 	reservationrequests_to_reservation(ReservationRequests, Reservations).
 
 
+
+
+
 /* 
 ----------------------------------------------
 |            ALL RESERVATIONS TO DAY         |
-e----------------------------------------------
-
-The code below is responsible for converting a list of reservations to a list of reservations on a specific day.
+e---------------------------------------------
 */
 
-/* Unifies a list of reservations with reservations made on a particular day */
+/* Unifies a list of reservations with reservations made on a particular day.
+	Does this by skipping non equal dated reservations and adding equal dated ones. */
 reservations_on_day([], [], _Date) .
+
+
 
 reservations_on_day([reservation(Id, [Day, Month], Time, Amount, Menu, Tables) | OtherReservations], [reservation(Id, [Day, Month], Time, Amount, Menu, Tables) | OtherReservationsOnDay], [Day, Month]) :-
 	reservations_on_day(OtherReservations, OtherReservationsOnDay, [Day, Month]) .
+
+
 
 reservations_on_day([reservation(_, [DayNotMatched, MonthNothEqual], _, _, _, _) | OtherReservations], OtherReservationsOnDay, [Day, Month]) :-
 	( DayNotMatched \= Day ; MonthNothEqual \= Month ),
 	reservations_on_day(OtherReservations, OtherReservationsOnDay, [Day, Month]) .
 
+
+
+
+
 /* 
 ----------------------------------------------
 |           TABLES TO TEXTUAL TABLES         |
 ----------------------------------------------
-
-The code below is responsible for converting an internal table representation to a textual one
 */
 
-/* Sort reservation on time (thus not date): TODO */
+/* Gives a textual representation for all possible table assignments */
 internal_to_textual_table_representation([0, 0, 1], "the table for four") .
 internal_to_textual_table_representation([0, 1, 0], "the table for three") .
 internal_to_textual_table_representation([0, 1, 1], "the table for three and four") .
@@ -866,6 +1049,9 @@ internal_to_textual_table_representation([1, 0, 0], "the table for two") .
 internal_to_textual_table_representation([1, 0, 1], "the table for two and four") .
 internal_to_textual_table_representation([1, 1, 0], "the table for two and three") .
 internal_to_textual_table_representation([1, 1, 1], "all tables") .
+
+
+
 
 
 /* 
@@ -882,7 +1068,7 @@ sort_reservations(RawReservations, SortedReservations) :-
 	when( nonvar( SortedReservations ), ordering_of_reservations( SortedReservations )),
 	perm( RawReservations, SortedReservations ).
 
-/* test the ordering of a list as soon as possible */
+
 
 ordering_of_reservations( [reservation(_Id, [Day1, Month1],  [StartTime1, EndTime1, _TimePreference], _Amount, _Menu, _Tables), reservation(_, [Day2, Month2],  [StartTime2, EndTime2, _], _, _, _) | OtherReservations] ) :-
 	Month1 #=< Month2,
@@ -893,26 +1079,33 @@ ordering_of_reservations( [reservation(_Id, [Day1, Month1],  [StartTime1, EndTim
 ordering_of_reservations( [] ).
 ordering_of_reservations( [_] ).
 
-/* Arbitrarily permute a list */
+
 
 perm( [], [] ).
 perm( [X|Y], [U|V] ) :-
 	del( U, [X|Y], W ),
 	perm( W, V ).
 
+
+
 del( X, [X|Y], Y ).
 del( X, [Y|U], [Y|V] ) :-
 	del( X, U, V ).
+
+
+
+
+
+
+
+
 
 
 /* 
 ##################################################################
 #                          DISPLAY SYSTEM                        #
 ##################################################################
-
-The below code is responsible for displaying the results.
 */
-
 
 /* 
 ----------------------------------------------
@@ -920,6 +1113,7 @@ The below code is responsible for displaying the results.
 ----------------------------------------------
 
 The code below is responsible for textually displaying reservations.
+Uses some fancy ASCII art work and formatting :)
 */
 
 /* Prints the reservations for Restaurant XX of a specified date [Day, Month] in a textual manner.
@@ -932,6 +1126,8 @@ textual_display_reservations_on_day(Sms, Reservations, [Day, Month]) :-
 	write( '\n\n' ),
 	textual_print_reservations(Sms, OrderedReservations),
 	write( '\n\n' ) .
+
+
 
 /* Prints a list of reservations in a textual manner.
 	Also finds the related SMS message to show it as a form of identification.  */
@@ -950,6 +1146,8 @@ textual_print_reservations(Sms, [reservation(Id, _Date,  [StartTime, EndTime, _T
 	write( '\n\n' ),
 	textual_print_reservations(Sms, OtherReservations) .
 
+
+
 /* Prints the reservations collected from the extra sms inbox on a specified date.
 	Uses a cut to not allow backtracking for displaying, as proposed by the assignment.  */
 textual_print_reservations_from_extra_sms([Day, Month]) :-
@@ -958,6 +1156,8 @@ textual_print_reservations_from_extra_sms([Day, Month]) :-
 	textual_display_reservations_on_day(Sms, Reservations, [Day, Month]),
 	! .
 
+
+
 /* Prints the reservations collected from the provided sms inbox on a specified date.
 	Uses a cut to not allow backtracking for displaying, as proposed by the assignment.  */
 textual_print_reservations_from_provided_sms([Day, Month]) :-
@@ -965,6 +1165,15 @@ textual_print_reservations_from_provided_sms([Day, Month]) :-
 	sms_to_reservations( Sms, Reservations ),
 	textual_display_reservations_on_day(Sms, Reservations, [Day, Month]),
 	! .
+
+
+
+
+
+
+
+
+
 
 /* 
 ##################################################################
@@ -982,3 +1191,37 @@ test_textual_output_sample_5([Day, Month]) :- is_processed_sms_inbox( Sms ), nth
 test_textual_output_sample_6([Day, Month]) :- is_processed_sms_inbox( Sms ), nth1(6,Sms, FilteredSms), sms_to_reservations( [FilteredSms], Reservations ), textual_display_reservations_on_day([FilteredSms], Reservations, [Day, Month]), ! .
 test_textual_output_sample_7([Day, Month]) :- is_processed_sms_inbox( Sms ), nth1(7,Sms, FilteredSms), sms_to_reservations( [FilteredSms], Reservations ), textual_display_reservations_on_day([FilteredSms], Reservations, [Day, Month]), ! .
 test_textual_output_sample_8([Day, Month]) :- is_processed_sms_inbox( Sms ), nth1(8,Sms, FilteredSms), sms_to_reservations( [FilteredSms], Reservations ), textual_display_reservations_on_day([FilteredSms], Reservations, [Day, Month]), ! .
+
+
+
+
+
+
+
+
+
+
+/* 
+##################################################################
+#                      README OF GITHUB REPO                     #
+##################################################################
+
+Below a copy of the README from the GitHub Repo is provided.
+It includes a list of performed tests.
+It is best viewed in a markdown editor.
+*/
+
+
+
+
+/* 
+
+
+
+% TODO: INSERT README HERE
+
+
+
+
+
+*/
