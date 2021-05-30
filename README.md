@@ -125,8 +125,9 @@ Some examples of the performed tests through the interpreter are given below.
    - ```constrain_reservation_request_menu``` (CLPFD)
       - Test constraints for the menu to be a singular allowed menu.
       - Test query: ```constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _Tables)], VariablesForLabeling), indomain(Menu) .```
-         - Answer: ```Menu = 1, VariablesForLabeling = [1]```
-         - Backtrack: ```Menu = 2, VariablesForLabeling = [2].```
+         - Note: This makes the menu "fixed" -> has easier results -> works when leaving MenuPreference a variable as well.
+         - Answer: ```Menu = MenuNew, MenuNew = 1, VariablesForLabeling = [1]```
+         - Backtrack: ```Menu = MenuNew, MenuNew = 2, VariablesForLabeling = [2].```
    - ```constrain_reservation_request_time``` (CLPFD)
       - Test constraints for time (StartTime and EndTime):
          - Must be in opening hours.
@@ -215,7 +216,9 @@ Some examples of the performed tests through the interpreter are given below.
          - Answer: prints the reservations from the extra SMS inbox on the first of April.
             - At 19h0, 4 people will arrive. They will have the theatre menu and sit at the table for four. They will leave at 20h0.
                - Order message: [hi,can,i,book,a,place,preferably,at,8,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please]
-            - [...] (fully booked 8PM reservation.)
+            - At 20h0, 2 people will arrive. They will have the theatre menu and sit at the table for four. They will leave at 21h0.
+               - Order message: [table,for,2,at,20,:,0,on,the,first,of,april,preferably,for,the,standard,menu]
+            - [...]
    - ```textual_print_reservations_from_provided_sms```
       - Test if the list of reservations is displayed correctly from the given SMS inbox on a given day.
       - Test query:  ```textual_print_reservations_from_provided_sms([18,3]) .```

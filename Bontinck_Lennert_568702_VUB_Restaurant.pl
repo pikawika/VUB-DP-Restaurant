@@ -211,15 +211,18 @@ is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 
 
 
-/* Succeeds when its argument represents the extra pre-processed sms inbox provided by me to demonstrate generality. */
+/* Succeeds when its argument represents the extra pre-processed sms inbox provided by me to demonstrate generality.
+	Very simple dataset for easy testing. */
 is_extra_processed_sms_inbox( [[table,for,2,at,20,':',00,on,the,first,of,april],
 								[hi,can,i,book,a,place,at,8,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please],
 								[table,for,3,at,8,pm,on,the,first,of,april,for,the,standard,menu,please]] ) .
 
-/* Succeeds when its argument represents the second extra pre-processed sms inbox provided by me to demonstrate generality. */
-is_extra_processed_sms_inbox2( [[table,for,2,at,20,':',00,on,the,first,of,april],
+/* Succeeds when its argument represents the second extra pre-processed sms inbox provided by me to demonstrate generality.
+	More challanging dataset for testing. */
+is_extra_processed_sms_inbox2( [[table,for,2,at,21,':',00,on,the,first,of,april],
+								[table,for,2,at,20,':',00,on,the,first,of,april,preferably,for,the,standard,menu],
 								[4,of,us,on,1,'/',4,preferably,at,8,pm],
-								[hi,can,i,book,a,place,at,8,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please],
+								[hi,can,i,book,a,place,at,9,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please],
 								[table,for,3,at,8,pm,on,the,first,of,april,for,the,standard,menu,please]] ) .
 
 
@@ -765,21 +768,35 @@ NOTE: these constraints are a bit dull and perhaps redundant.
 */
 
 /* Constraints for menu:
+   - When menu is fixed we keep the variable ground, otherwise it can be changed.
    - Must be a legal menu
    - Only one menu must be chosen
+
+	NOTE: makes a new list since menu variables are already ground when prefferable and we need them as variables
  */
-constrain_reservation_request_menu([], []) .
+constrain_reservation_request_menu([], [], []) .
 
 
 
-constrain_reservation_request_menu([reservation_request(_Id, _Date, _Time, _Amount, [Menu, _MenuPreference], _Tables) | OtherReservationRequests], [ Menu | OtherVariablesForLabeling]) :- 
-	Menu in 1..2,
+constrain_reservation_request_menu([reservation_request(Id, Date, Time, Amount, [Menu, MenuPreference], Tables) | OtherReservationRequests],
+									[reservation_request(Id, Date, Time, Amount, [MenuNew, MenuPreference], Tables) | OtherReservationRequestsNew],
+									[ MenuNew | OtherVariablesForLabeling]) :- 
+	
+	is_max_preference(MaxPreference),
+	MenuPreference in 1..MaxPreference,
+	is_preference(FixedPreference, fixed),
+	( MenuPreference #= FixedPreference ) #==> ( Menu #= MenuNew),
+
+	is_max_menu(MaxMenu),
+	MenuNew in 1..MaxMenu,
+
 	is_menu(StandardMenu, standard),
 	is_menu(TheatreMenu, theatre),
-	( Menu #= StandardMenu ) #<==> ( StandardMenuChosen ),
-	( Menu #= TheatreMenu ) #<==> ( TheatreMenuChosen ),
+	( MenuNew #= StandardMenu ) #<==> ( StandardMenuChosen ),
+	( MenuNew #= TheatreMenu ) #<==> ( TheatreMenuChosen ),
+
 	StandardMenuChosen + TheatreMenuChosen #= 1,	
-	constrain_reservation_request_menu(OtherReservationRequests, OtherVariablesForLabeling) .
+	constrain_reservation_request_menu(OtherReservationRequests, OtherReservationRequestsNew, OtherVariablesForLabeling) .
 
 
 
@@ -801,7 +818,7 @@ The internal representation of a time variable is a list: [StartTime, EndTime, T
    - Rounded to specified rounding.
    - Long enough for chosen menu.
 
-	NOTE: makes a new list since time variables are already ground when prefferable and we need the as variables
+	NOTE: makes a new list since time variables are already ground when prefferable and we need them as variables
  */
 constrain_reservation_request_time([], [], []) .
 
@@ -976,13 +993,13 @@ nlp_to_clp_iter( Id, [[[Day, Month], [StartTime, TimePreference], Amount, [Menu,
 */
 
 /* Performs labeling using FFC and all constraints for the input list which is a CLP representation */
-clp_labeling(InputList, UpdatedList) :-
-	constrain_reservation_request_menu(InputList, VariablesForLabelingMenu),
-	constrain_reservation_request_table(InputList, VariablesForLabelingTable),
-	constrain_reservation_request_time(InputList, UpdatedList, VariablesForLabelingTime),
-	constrain_reservation_request_double_booking(UpdatedList, VariablesForLabelingDoubleBooking),
+clp_labeling(InputRequestList, FinalRequestList) :-
+	constrain_reservation_request_menu(InputRequestList, UpdatedRequestList, VariablesForLabelingMenu),
+	constrain_reservation_request_table(UpdatedRequestList, VariablesForLabelingTable),
+	constrain_reservation_request_time(UpdatedRequestList, FinalRequestList, VariablesForLabelingTime),
+	constrain_reservation_request_double_booking(FinalRequestList, VariablesForLabelingDoubleBooking),
 	append([VariablesForLabelingMenu, VariablesForLabelingTable, VariablesForLabelingTime, VariablesForLabelingDoubleBooking], Variables),
-	wasted_space(UpdatedList, _Minimization),
+	wasted_space(FinalRequestList, _Minimization),
 	labeling( [ffc], Variables ) .
 
 
