@@ -85,14 +85,18 @@ Some things were assumed:
 
 
 Some issues/bugs are known with the code:
-   - The constraint system does not use the "preference" information extracted by the NLP for menu and time
-      - Thus all bounded menu's and times are seen as "fixed"
-      - This causes a false because double booking occurs -> the list of provided SMS messages is shortened to not include those with "preferred"
+   - The constraint system DOES WORK with "preference" information but behaves the same as if they were not specified.
+   - The constraint system isn't capable of leaving out reservations when overlap is not avoidable
+      - This causes a false for the provided dataset because double booking occurs -> the list of provided SMS messages is shortened to fix this issue.
          - Each individual case can be tested from provided set which does yield correct result -> see tests given as test_textual_output_sample_XXX methods (e.g. test_textual_output_sample_1)
             ---> Since this does nth1 you will have to uncomment the commented out full dataset and comment out the filtered one
-   - ffc is used instead of a custom optimisation such as the provided wasted_space minimizer since this minimizer gave "non bound" errors.
 
-   --> All of these errors are related to the constraint system which works for most samples. I hope this is taken into consideration when marking the other components of the system that do seem to work completely.
+   --> All of these are related to the constraint system which works for most samples. I hope this is taken into consideration when marking the other components of the system that do seem to work completely.
+
+
+During the WPO it was asked if a TypeScript is needed, which the answer was "no, as long as you have clear examples and their output".
+		 --> These are examples and output are available in the README.md
+
 
 STUDENT INFO:
     - Name: Bontinck Lennert
@@ -190,14 +194,15 @@ The following code provides the pre-processed SMS inboxes so that it can be easi
 */
 
 /* Succeeds when its argument represents the pre-processed sms inbox provided by the assignment. */
-% NOTE: SMS inbox with preffered things filter out is used by default since constrain doesn't recognize them. --> comment this one out and enable the other one when using made test predicates.
+% NOTE: SMS inbox with some reservtions left out is used by default due to the constraint system not being able to reject individual reservations when double booking is not avoidable. (discussed earlier on)
 is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 						[please,can,we,have,a,table,for,3,for,the,theatre,menu,on,march,18,th],
-						%[we,would,like,a,table,for,5,preferably,at,8,pm,on,18,'/',03],
+						[we,would,like,a,table,for,5,preferably,at,8,pm,on,18,'/',03],
 						[can,i,book,a,table,at,9,pm,for,2,people,on,the,18,th,of,march,for,the,standard,menu,please],
 						[reserve,us,a,table,on,march,18,for,a,party,of,4,for,the,standard,menu],
-						[9,people,on,18,th,of,march],
-						[book,6,of,us,in,on,18,march,at,20,':',00]] ) .
+						%[9,people,on,18,th,of,march],
+						%[book,6,of,us,in,on,18,march,at,20,':',00],
+						[reservation,for,7,on,march,18,preferably,for,standard,menu,at,7,oclock]] ) .
 
 % Full given SMS inbox below
 /*is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
@@ -992,24 +997,27 @@ nlp_to_clp_iter( Id, [[[Day, Month], [StartTime, TimePreference], Amount, [Menu,
 ----------------------------------------------
 */
 
-/* Performs labeling using FFC and all constraints for the input list which is a CLP representation */
-clp_labeling(InputRequestList, FinalRequestList) :-
+/* Performs labeling giving preference to a reservation setup where least spaces are wasted.
+	Has a parameter for the initial list of reservation requests and a final list of confirmed reservations. */
+clp_labeling(InputRequestList, Reservations) :-
 	constrain_reservation_request_menu(InputRequestList, UpdatedRequestList, VariablesForLabelingMenu),
 	constrain_reservation_request_table(UpdatedRequestList, VariablesForLabelingTable),
 	constrain_reservation_request_time(UpdatedRequestList, FinalRequestList, VariablesForLabelingTime),
 	constrain_reservation_request_double_booking(FinalRequestList, VariablesForLabelingDoubleBooking),
-	append([VariablesForLabelingMenu, VariablesForLabelingTable, VariablesForLabelingTime, VariablesForLabelingDoubleBooking], Variables),
-	wasted_space(FinalRequestList, _Minimization),
-	labeling( [ffc], Variables ) .
+	wasted_space(FinalRequestList, Minimization),
+	append([[Minimization], VariablesForLabelingMenu, VariablesForLabelingTable, VariablesForLabelingTime, VariablesForLabelingDoubleBooking], Variables),
+	labeling( [min(Minimization)], Variables ),
+	reservationrequests_to_reservation(FinalRequestList, Reservations).
 
 
 
-/* variable that could be used for minimization as to not waste space by assigning a too big table to someone - does not work sadly due to non ground error */
-wasted_space([], _Minimization) .
-wasted_space([reservation_request(_Id, _Date, _Time, Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | ClpRest], Minimization) :-
+/* This will calculate the wasted space by calculating the difference between how many people are at a table and how many people that table can have.
+	Minimizing this can be used as a criteria for labeling. */
+wasted_space([], 0) .
+wasted_space([reservation_request(_Id, _Date, _Time, Amount, _Menu, [TableFor2, TableFor3, TableFor4]) | OtherReservationRequests], Minimization) :-
 	TotalSeatingCapacity #= 2*TableFor2 + 3*TableFor3 + 4*TableFor4,
-	NewMinimization #= Minimization + (TotalSeatingCapacity - Amount),
-	wasted_space(ClpRest, NewMinimization) .
+	Minimization #= NewMinimization + (TotalSeatingCapacity - Amount),
+	wasted_space(OtherReservationRequests, NewMinimization) .
 
 
 
@@ -1042,8 +1050,7 @@ reservationrequests_to_reservation([reservation_request(Id, Date, Time, Amount, 
 sms_to_reservations(Sms, Reservations) :-
 	sms_to_nlp( Sms, Nlp ),
 	nlp_to_clp( Nlp, ReservationRequests),
-	clp_labeling(ReservationRequests, LabeledRequests),
-	reservationrequests_to_reservation(LabeledRequests, Reservations).
+	clp_labeling(ReservationRequests, Reservations) .
 
 
 

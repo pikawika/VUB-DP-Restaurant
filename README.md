@@ -169,8 +169,17 @@ Some examples of the performed tests through the interpreter are given below.
    - ```clp_labeling```
    
       - Test if input list of reservation requests is labelled.
-      - Test query: ```clp_labeling([reservation_request(0, [1, 4], [1200, EndTime1, 1], 2, [1, 2], Tables1), reservation_request(1, [1, 4], [1200, EndTime2, 1], 4, [2, 1], Tables2), reservation_request(2, [1, 4], [1200, EndTime3, 1], 3, [1, 1], Tables3)]) .```
-         - Answer: ```EndTime1 = EndTime3, EndTime3 = 1320, Tables1 = [1, 0, 0], EndTime2 = 1260, Tables2 = [0, 0, 1], Tables3 = [0, 1, 0] ;```
+      - Test query: ```clp_labeling([reservation_request(0, [1, 4], [1200, _, 1], 2, [1, 2], _), reservation_request(1, [1, 4], [1200, _, 1], 4, [2, 1], _), reservation_request(2, [1, 4], [1200, _, 1], 3, [1, 1], _)], Reservations) .```
+         - Answer: ```Reservations = [reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])]```
+   
+   - ```wasted_space```
+   
+      - Tests if the wasted space minimizer works by checking some samples individually
+      - Test query: ```test_textual_output_sample_1([18,3]) .```
+         - Prints the reservations from the provided SMS inbox filter to only have first (nth1 index 1) sample on the 18th of March.
+         - Answer: At 20h0, 2 people will arrive. They will have the standard menu and sit at the table for two. They will leave at 22h0.
+            - Order message: [table,for,2,at,20,:,0,on,18,march]
+         - It is clear that the table for 2 is assigned since that option wastes no space. If you enable backtracking (by removing the cut), it is also clear it is not by luck since tables are assigned in "worsening" order.
    
    - ```sms_to_reservations```
       
@@ -227,5 +236,7 @@ Some examples of the performed tests through the interpreter are given below.
       - Made helpful test predicates to test print of individual samples from the given SMS inbox.
       - use query: ```test_textual_output_sample_XXX( ([18,3]) ) . ``` with XXX in 1..8.
       - Test query: ```test_textual_output_sample_1([18,3]) .```
-         - Answer: Prints the reservations from the provided SMS inbox filter to only have first (nth1 index 1) sample on the 18th of March.
+         - Prints the reservations from the provided SMS inbox filter to only have first (nth1 index 1) sample on the 18th of March.
+         - Answer: At 20h0, 2 people will arrive. They will have the standard menu and sit at the table for two. They will leave at 22h0.
+            - Order message: [table,for,2,at,20,:,0,on,18,march]
 
