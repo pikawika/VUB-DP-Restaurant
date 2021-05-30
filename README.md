@@ -202,9 +202,12 @@ Some examples of the performed tests through the interpreter are given below.
       - Test if the list of reservations is displayed correctly from the extra SMS inbox on a given day.
       - Test query:  ```textual_print_reservations_from_extra_sms([1,4]) .```
          - Answer: prints the reservations from the extra SMS inbox on the first of April.
-            - At 20h0, 2 people will arrive. They will have the standard menu and sit at the table for two. They will leave at 22h0.
             - At 20h0, 4 people will arrive. They will have the theatre menu and sit at the table for four. They will leave at 21h0.
+               - Order message: [hi,can,i,book,a,place,at,8,pm,for,4,persons,on,the,first,of,april,for,the,theatre,menu,please]
+            - At 20h0, 2 people will arrive. They will have the standard menu and sit at the table for two. They will leave at 22h0.
+               - Order message: [table,for,2,at,20,:,0,on,the,first,of,april]
             - At 20h0, 3 people will arrive. They will have the standard menu and sit at the table for three. They will leave at 22h0.
+               - Order message: [table,for,3,at,8,pm,on,the,first,of,april,for,the,standard,menu,please]
    - ```textual_print_reservations_from_provided_sms```
       - Test if the list of reservations is displayed correctly from the given SMS inbox on a given day.
       - Test query:  ```textual_print_reservations_from_provided_sms([18,3]) .```
