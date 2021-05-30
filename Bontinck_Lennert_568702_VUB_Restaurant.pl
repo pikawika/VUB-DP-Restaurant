@@ -1,4 +1,4 @@
-/*Single loadable file for the Restaurant assignment.
+/*
 
 The GitHub repository for this project is available at: https://github.com/pikawika/VUB-DP-Restaurant.
     To ensure it isn't fraudulently used by colleague students please send a request via email to join this repo.
@@ -8,41 +8,95 @@ The created code was tested on an incremental basis through the interpreter.
       - The readme is best read through a markdown editor or directly on Github but a copy of the README file is provided as a huge comment at the bottom of this file.
    - Some predicates were made to make testing easy through a "one line" query.
 
-Testing performed:
-   - Testing SMS INBOX:
-      - Simple unifaction tests.
-   - Testing the DCG:
-      - Helpfull testing predicates available under: TESTING NLP SYSTEM
-      - Done through manually validating the extracted arguments of both the supplied sms inbox as well as a supplamentory inbox.
-	  - Some extra tests for testing individual components of the grammar such as date extraction.
+To test the whole system by generating the final planning, one can use the following query to print the planning for the provided SMS messages on the 18th of march:
+    textual_print_reservations_from_provided_sms([18,3]) .
+
+Testing performed and general content of system:
+   - GENERAL PREDICATES:
+      - minutes_since_midnight
+         - Tests link between [Hour, Minute] format and MinutesSinceMidNight format.
+   - SMS INBOX:
+      - Simple unifications for is_processed_sms_inbox and is_extra_processed_sms_inbox.
+   - NLP SYSTEM:
+      - date
+         - Tests link from different natural language inputs (e.g. [first,of,april]) to internal [Month, Day] representation of date.
+      - time, amount, menu
+         - Tested in the same manner as the date.
+      - reservation_request
+         - Made helpful test predicates to link SMS inbox message to extracted values, this tests the whole NLP system.
+         - use query: test_dcg_sample_XXX( Result ) . 
+            --> with XXX in 1..8
+         - use query: test_dcg_sample_extra_XXX( Result ) . 
+            --> with XXX in 1..3
+         - use query: test_dcg_sample_all() . 
+   - CONSTRAINT SYSTEM:
+      - constrain_reservation_request_menu
+         - Test constraints for the menu to be a singular allowed menu.
+      - constrain_reservation_request_time
+         - Test constraints for time (StartTime and EndTime):
+            - Must be in opening hours.
+            - Time must be rounded to specified rounding from is_time_rounding (e.g. time rounding = 60, all times must be at round hour thus with minutes = 0).
+            - Must be long enough for the menu.
+      - constrain_reservation_request_table
+         - Tests constraints for tables:
+            - Amount of people must not exceed maximum capacity (9).
+            - Reserved tables must be able to seat all people.
+      - constrain_reservation_request_double_booking
+         - Tests constraints for double booking so that no table is booked twice during the same time.
+   - CONVERSION SYSTEM:
+      - sms_to_nlp
+         - Test if the list of SMS messages links correctly with the list of NLP representations
+      - nlp_to_clp
+         - Test if the list of NLP representations links correctly with CLPFD reservation requests representation
+      - clp_labeling
+         - Test if input list of reservation requests is labelled.
+      - sms_to_reservations
+         - Tests if SMS inbox can be linked with the made reservations correctly, chaining together all systems.
+      - reservations_on_day
+         - Tests if the list of reservations on a specific day can indeed be linked to the list of reservations.
+      - sort_reservations
+         - Tests if the list of reservations does indeed sort correctly based on month>day>start time> end time.
+         - Uses a modified version of British museum sort from the lectures.
+   - OUTPUT SYSTEM:
+      - textual_display_reservations_on_day
+         - Test if the list of reservations is displayed correctly for a given day.
+      - textual_print_reservations_from_extra_sms
+         - Test if the list of reservations is displayed correctly from the extra SMS inbox on a given day.
+      - textual_print_reservations_from_provided_sms
+         - Test if the list of reservations is displayed correctly from the given SMS inbox on a given day.
+      - textual_print_reservations_from_provided_sms
+         - Made helpful test predicates to test print of individual samples from the given SMS inbox.
+         - use query: test_textual_output_sample_XXX( ([18,3]) ) . 
+            --> with XXX in 1..8
+    
 
 Some things were assumed:
    - Since the text messages are said to be processed no operations such as downcase_atom (lowercase transformation) are done.
    - Since we could make the NLP portion endlessly big, it is made so that only the examples and very minor extra's are accepted.
-      - These extra's are tested via is_extra_processed_sms_inbox.
    - Since I'm no expert in linguistics the naming for different parts of sentences might be odd.
-      - It is also possible to make weird sentences such as "book I can a table for 2" due to both being just labelled verb.
+      - It is also possible to make weird sentences such as "book I can a table for 2" since both "book" and "can" are seen as a verb.
    - No constraint needed for "Booking takes place at least a day before" (confirmed by Homer).
-   - For the following sentence: "preferably for the standard menu at 7 o'clock"
+   - From the following sentence of the provided SMS inbox: "preferably for the standard menu at 7 o'clock"
       - 7 o'clock is 7 pm since the restaurant is not open in the morning.
       - "preferable" is concerning the standard menu, not the time since it is situated before the menu. Thus menu also has the option to be "preferred".
 
 
-KNOWN BUGS:
-   - The constraint system does not used the "preference" information extracted by the NLP
+Some issues/bugs are known with the code:
+   - The constraint system does not use the "preference" information extracted by the NLP for menu and time
       - Thus all bounded menu's and times are seen as "fixed"
-      - This causes a false since double booking occurs -> the list of provided menu's is shortened to not include those with "preffered"
-	  - Each individual case can be tested from provided set which does yield correct result -> see tests given as test_textual_output_sample_XXX methods (e.g. test_textual_output_sample_1)
-	     ---> Since this does nth1 you will have to uncomment the commented out full dataset and comment the filtered one
-   - ffc is used instead of an optimisation such as the wasted_space minimizer that is provided but non functional due to non ground error.
+      - This causes a false because double booking occurs -> the list of provided SMS messages is shortened to not include those with "preferred"
+         - Each individual case can be tested from provided set which does yield correct result -> see tests given as test_textual_output_sample_XXX methods (e.g. test_textual_output_sample_1)
+            ---> Since this does nth1 you will have to uncomment the commented out full dataset and comment out the filtered one
+   - ffc is used instead of a custom optimisation such as the provided wasted_space minimizer since this minimizer gave "non bound" errors.
 
-   --> All of these errors are related to the constraint system which works for the extra given samples. I hope this is taken into consideration when marking the other components of the system that do seem to work completely.
+   --> All of these errors are related to the constraint system which works for most samples. I hope this is taken into consideration when marking the other components of the system that do seem to work completely.
 
 STUDENT INFO:
     - Name: Bontinck Lennert
     - Student ID: 568702
     - Affiliation: VUB - Master Computer Science: AI 
-	- Email: lennert.bontinck@vub.be
+    - Email: lennert.bontinck@vub.be
+    
 */
 
 /* 
@@ -809,7 +863,7 @@ internal_to_textual_table_representation([0, 0, 1], "the table for four") .
 internal_to_textual_table_representation([0, 1, 0], "the table for three") .
 internal_to_textual_table_representation([0, 1, 1], "the table for three and four") .
 internal_to_textual_table_representation([1, 0, 0], "the table for two") .
-internal_to_textual_table_representation([1, 0, 1], "the table for two and fout") .
+internal_to_textual_table_representation([1, 0, 1], "the table for two and four") .
 internal_to_textual_table_representation([1, 1, 0], "the table for two and three") .
 internal_to_textual_table_representation([1, 1, 1], "all tables") .
 
@@ -874,10 +928,9 @@ textual_display_reservations_on_day(Sms, Reservations, [Day, Month]) :-
 	reservations_on_day(Reservations, ReservationsOnDay, [Day, Month]),
 	sort_reservations(ReservationsOnDay, OrderedReservations),
 	write( '\n\n' ),
-	writef( '   ______________________________\n / \\                             \\\n|   |                            |\n \\_ |                            |\n    | RESTAURANT XX RESERVATIONS |\n    |           %t/%t             |\n    |   _________________________|___\n    |  /                            /\n    \\_/____________________________/', [Day, Month]),
+	writef( '   _________________________________________________________\n / \\                                                        \\\n|   |            R E S T A U R A N T   X X                  |\n \\_ |                                                       |\n    |                                                       |\n    |                                                       |\n    |         R E S E R V A T I O N S    L I S T            |\n    |                   D A T E: %t/%t                       |\n    |                                                       |\n    |                                                       |\n    |                                                       |\n    |  M a d e    b y    L e n n e r t    B o n t i n c k   |\n    |   ____________________________________________________|___\n    |  /                                                       /\n    \\_/_______________________________________________________/\n', [Day, Month]),
 	write( '\n\n' ),
 	textual_print_reservations(Sms, OrderedReservations),
-	write( '------------------------------------------------- Copyright Lennert Bontinck ------------------------------------------------' ),
 	write( '\n\n' ) .
 
 /* Prints a list of reservations in a textual manner.
@@ -891,7 +944,7 @@ textual_print_reservations(Sms, [reservation(Id, _Date,  [StartTime, EndTime, _T
 	internal_to_textual_table_representation(Tables, TextualTables),
 	nth0(Id,Sms, OrderMessage),
 
-	writef( 'At %th%t, %t people will arive. They will have the %t menu and sit at %w. They will leave at %th%t.', [StartHour, StartMinute, Amount, NaturalLangMenu, TextualTables, EndHour, EndMinute]),
+	writef( 'At %th%t, %t people will arrive. They will have the %t menu and sit at %w. They will leave at %th%t.', [StartHour, StartMinute, Amount, NaturalLangMenu, TextualTables, EndHour, EndMinute]),
 	write( '\n' ),
 	writef( '\tOrder message: %t', [OrderMessage]),
 	write( '\n\n' ),
