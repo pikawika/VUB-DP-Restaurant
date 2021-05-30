@@ -108,7 +108,7 @@ is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
 						[can,i,book,a,table,at,9,pm,for,2,people,on,the,18,th,of,march,for,the,standard,menu,please],
 						[reserve,us,a,table,on,march,18,for,a,party,of,4,for,the,standard,menu],
 						[9,people,on,18,th,of,march],
-						[book,6,of,us,in,on,18,march,at,20,':',00]] )  .
+						[book,6,of,us,in,on,18,march,at,20,':',00]] ) .
 
 % Full given SMS inbox below
 /*is_processed_sms_inbox( [[table,for,2,at,20,':',00,on,18,march],
@@ -819,11 +819,36 @@ internal_to_textual_table_representaiton([1, 1, 1], "all tables") .
 |             ORDERING RESERVATIONS          |
 ----------------------------------------------
 
-The code below is responsible for ordering reservations. It is modified from the British Museum sort seen during the lectures.
+The code below is responsible for ordering reservations on date/time. 
+It is modified from the British Museum sort seen during the lectures.
 */
 
-/* Sort reservation on time (thus not date): TODO */
-order_reservations_on_day(Reservations, Reservations, _Day) .
+/* Sort reservation on time */
+sort_reservations(RawReservations, SortedReservations) :-
+	when( nonvar( SortedReservations ), ordering_of_reservations( SortedReservations )),
+	perm( RawReservations, SortedReservations ).
+
+/* test the ordering of a list as soon as possible */
+
+ordering_of_reservations( [reservation(_Id, [Day1, Month1],  [StartTime1, EndTime1, _TimePreference], _Amount, _Menu, _Tables), reservation(_, [Day2, Month2],  [StartTime2, EndTime2, _], _, _, _) | OtherReservations] ) :-
+	Month1 #=< Month2,
+	Day1 #=< Day2,
+	StartTime1 #=< StartTime2,
+	EndTime1 #=< EndTime2,
+	when( nonvar( OtherReservations ), ordering_of_reservations( [ reservation(_, [Day2, Month2],  [StartTime2, EndTime2, _], _, _, _) | OtherReservations ] )).
+ordering_of_reservations( [] ).
+ordering_of_reservations( [_] ).
+
+/* Arbitrarily permute a list */
+
+perm( [], [] ).
+perm( [X|Y], [U|V] ) :-
+	del( U, [X|Y], W ),
+	perm( W, V ).
+
+del( X, [X|Y], Y ).
+del( X, [Y|U], [Y|V] ) :-
+	del( X, U, V ).
 
 
 /* 
@@ -834,10 +859,19 @@ order_reservations_on_day(Reservations, Reservations, _Day) .
 The below code is responsible for displaying the results.
 */
 
+
+/* 
+----------------------------------------------
+|                TEXTUAL DISPLAY             |
+----------------------------------------------
+
+The code below is responsible for textually displaying reservations.
+*/
+
 /* Prints the reservations of a specified date [Day, Month] in a textual manner. */
 textual_display_reservations_on_day(Sms, Reservations, [Day, Month]) :-
 	reservations_on_day(Reservations, ReservationsOnDay, [Day, Month]),
-	order_reservations_on_day(ReservationsOnDay, OrderedReservations, [Day, Month]),
+	sort_reservations(ReservationsOnDay, OrderedReservations),
 	write( '\n\n' ),
 	writef( '------------------------------------------ Restaurant XX planning of %t/%t ------------------------------------------', [Day, Month]),
 	write( '\n\n' ),

@@ -142,22 +142,33 @@ Some examples of such tests through the interpreter are given below.
          - Answer: ```Inbox = [[table, for, 2, at, 20, :, 0, on, the, first, of, april], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, april, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, april, for, the, standard, menu, please]],```
             
             ```NlpRepresentation = [[[1, 4], [1200, 1], 2, [1, 2]], [[1, 4], [1200, 1], 4, [2, 1]], [[1, 4], [1200, 1], 3, [1, 1]]]```
+      
    - ```nlp_to_clp```
       - Links a list of NLP representations to a list of CLP representations.
       - Test query: ```nlp_to_clp([[[1, 4], [1200, 1], 2, [1, 2]], [[1, 4], [1200, 1], 4, [2, 1]], [[1, 4], [1200, 1], 3, [1, 1]]], ClpRepresention) . ```
          - Answer: ```ClpRepresention = [reservation_request(0, [1, 4], [1200, _9338, 1], 2, [1, 2], _9316), reservation_request(1, [1, 4], [1200, _9400, 1], 4, [2, 1], _9378), reservation_request(2, [1, 4], [1200, _9462, 1], 3, [1, 1], _9440)]```
+      
    - ```sms_to_reservations```
       
       - Unifies SMS inbox with the made reservations, chains together other conversions.
       - Test query: ```is_extra_processed_sms_inbox( Sms ), sms_to_reservations( Sms, Reservations ) .```
          - Answer: ```Sms = [[table, for, 2, at, 20, :, 0, on, the, first, of, april], [hi, can, i, book, a, place, at, 8, pm, for, 4, persons, on, the, first, of, april, for, the, theatre, menu, please], [table, for, 3, at, 8, pm, on, the, first, of, april, for, the, standard, menu, please]],```
             ```Reservations = [reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])] ```
+      
    - ```reservations_on_day```
       - Unifies a list of reservations with reservations made on a particular day.
       - Test query: ```reservations_on_day([reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])], ReservationsOnDay, [2, 4]) .```
          - Answer: ```ReservationsOnDay = []```
       - Test query: ```reservations_on_day([reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])], ReservationsOnDay, [1, 4]) .```
          - Answer: ```ReservationsOnDay = [reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])]```
+      
+   - ```sort_reservations```
+   
+      - Sort reservation on time, based on British Museum sort seen during the lectures.
+      - Test query:  ```sort_reservations([reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])], SortedReservations) . ```
+         - Answer: ```SortedReservations = [reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])]``` 
+         - Indeed, the list is ordered!
+   
 - OUTPUT SYSTEM
    - ```textual_display_reservations_on_day```
       - Prints the reservations of a specified date [Day, Month] in a textual manner
