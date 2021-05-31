@@ -165,12 +165,12 @@ The following code will import the required libraries:
 #                       GENERAL PREDICATES                       #
 ##################################################################
 
-This section will provide some global predicates to ensure uniformity.
+This section will provide some global predicates to ensure uniformity and ease of extension.
 */
 
-/* Succeeds when the first parameter is the integer representation of the second parameter's menu */
-is_menu(1, standard) .
-is_menu(2, theatre) .
+/* Succeeds when the first parameter is the integer representation of the second parameter's menu and the time in minutes it takes to consume. */
+is_menu(1, standard, 120) .
+is_menu(2, theatre, 60) .
 
 /* Succeeds when the parameter is the maximum integer representation a menu */
 is_max_menu(2) .
@@ -608,8 +608,8 @@ no_menu_description([_Menu, Preference]) --> [], {is_preference(Preference, unsp
 
 /* Succeeds when the parameter (Menu) is equal to the textual representation of an allowed menu.
 	This abstraction makes it easier to add more menus down the line and ensures no "junk" is entered. */
-menu(Menu) --> [RawMenu], {RawMenu = theatre, is_menu(Menu, RawMenu)} .
-menu(Menu) --> [RawMenu], {RawMenu = standard, is_menu(Menu, RawMenu) } .
+menu(Menu) --> [RawMenu], {RawMenu = theatre, is_menu(Menu, RawMenu, _)} .
+menu(Menu) --> [RawMenu], {RawMenu = standard, is_menu(Menu, RawMenu, _) } .
 
 
 
@@ -851,8 +851,8 @@ constrain_reservation_request_menu([reservation_request(Id, Date, Time, Amount, 
 	is_max_menu(MaxMenu),
 	MenuNew in 1..MaxMenu,
 
-	is_menu(StandardMenu, standard),
-	is_menu(TheatreMenu, theatre),
+	is_menu(StandardMenu, standard, _),
+	is_menu(TheatreMenu, theatre, _),
 	( MenuNew #= StandardMenu ) #<==> ( StandardMenuChosen ),
 	( MenuNew #= TheatreMenu ) #<==> ( TheatreMenuChosen ),
 
@@ -903,10 +903,10 @@ constrain_reservation_request_time([reservation_request(Id, Date, [StartTime, En
 
 	is_max_menu(MaxMenu),
 	Menu in 1..MaxMenu,
-	is_menu(StandardMenu, standard),
-	is_menu(TheatreMenu, theatre),
-	( Menu #= StandardMenu ) #==> ( EndTimeNew - StartTimeNew #= 120  ),
-	( Menu #= TheatreMenu ) #==> ( EndTimeNew - StartTimeNew #= 60 ),
+	is_menu(StandardMenu, standard, StandardMenuTimeNeeded),
+	is_menu(TheatreMenu, theatre, TheatreMenuTimeNeeded),
+	( Menu #= StandardMenu ) #==> ( EndTimeNew - StartTimeNew #= StandardMenuTimeNeeded  ),
+	( Menu #= TheatreMenu ) #==> ( EndTimeNew - StartTimeNew #= TheatreMenuTimeNeeded ),
 	
 	constrain_reservation_request_time(OtherReservationRequests, OtherReservationRequestsNew, OtherVariablesForLabeling) .
 
@@ -1315,7 +1315,7 @@ textual_print_reservations(_Sms, []) .
 textual_print_reservations(Sms, [reservation(Id, _Date,  [StartTime, EndTime, _TimePreference], Amount, [Menu, _MenuPreference], Tables) | OtherReservations]) :-
 	minutes_since_midnight(StartTime, [StartHour, StartMinute]),
 	minutes_since_midnight(EndTime, [EndHour, EndMinute]),
-	is_menu(Menu, NaturalLangMenu),
+	is_menu(Menu, NaturalLangMenu, _),
 	internal_to_textual_table_representation(Tables, TextualTables),
 	nth0(Id,Sms, OrderMessage),
 
@@ -1778,7 +1778,7 @@ Some examples of the performed tests through the interpreter are given below.
       -  Test query: ```menu( ExtractedMenu, [randomjunk], [] ) .```
          - Answer: ```false```
    -  ```reservation_request``` and thus ```sentence```  (DCG)
-      - To test these an easy 1 liner is made
+      - To test the NLP extraction with manual validation an easy 1 liner is made for the provided SMS inboxes.
       - Test query: ```test_dcg_sample_1( Result ) .```
          - Answer: ```Result = [[18, 3], [1200, 1], 2, [1, 2]]```
       - Test query: ```test_dcg_sample_2( Result ) .```
@@ -1801,8 +1801,6 @@ Some examples of the performed tests through the interpreter are given below.
          - Answer: ```Result = [[1, 12], [1200, 1], 4, [2, 1]]```
       - Test query: ```test_dcg_sample_extra_3( Result ) .```
          - Answer: ```Result = [[1, 12], [1200, 1], 3, [1, 1]]```
-      - Test query: ```test_dcg_sample_all() .```
-         - Answer: ```true```
    -  Automated testing
       -  The DCG part can be tested in a more automated way by checking whether the following predicates return true
          -  ```test_dcg_sample_XXX_passes() .``` with XXX in 1..8

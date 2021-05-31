@@ -56,7 +56,7 @@ Some examples of the performed tests through the interpreter are given below.
          - Answer: ```MinuteSinceMidnight = Hour = 20, Minute = 30.```
    
 - SMS INBOX
-   
+  
    - Simple unifications for is_processed_sms_inbox and is_extra_processed_sms_inbox.
    - ```is_processed_sms_inbox```
       - Succeeds when the argument represents the pre-processed SMS inbox provided by the assignment.
@@ -99,7 +99,7 @@ Some examples of the performed tests through the interpreter are given below.
       -  Test query: ```menu( ExtractedMenu, [randomjunk], [] ) .```
          - Answer: ```false```
    -  ```reservation_request``` and thus ```sentence```  (DCG)
-      - To test these an easy 1 liner is made
+      - To test the NLP extraction with manual validation an easy 1 liner is made for the provided SMS inboxes.
       - Test query: ```test_dcg_sample_1( Result ) .```
          - Answer: ```Result = [[18, 3], [1200, 1], 2, [1, 2]]```
       - Test query: ```test_dcg_sample_2( Result ) .```
@@ -122,8 +122,6 @@ Some examples of the performed tests through the interpreter are given below.
          - Answer: ```Result = [[1, 12], [1200, 1], 4, [2, 1]]```
       - Test query: ```test_dcg_sample_extra_3( Result ) .```
          - Answer: ```Result = [[1, 12], [1200, 1], 3, [1, 1]]```
-      - Test query: ```test_dcg_sample_all() .```
-         - Answer: ```true```
    -  Automated testing
       -  The DCG part can be tested in a more automated way by checking whether the following predicates return true
          -  ```test_dcg_sample_XXX_passes() .``` with XXX in 1..8
@@ -177,7 +175,7 @@ Some examples of the performed tests through the interpreter are given below.
          - Backtrack: false
 
    - ```nlp_to_clp```
-      
+     
       - Test if the list of NLP representations links correctly with CLPFD reservation requests representation
       - Test query: ```nlp_to_clp([[[1, 4], [1200, 1], 2, [1, 2]], [[1, 4], [1200, 1], 4, [2, 1]], [[1, 4], [1200, 1], 3, [1, 1]]], ClpRepresention) . ```
          - Answer: ```ClpRepresention = [reservation_request(0, [1, 4], [1200, _6442, 1], 2, [1, 2], _6420), reservation_request(1, [1, 4], [1200, _6504, 1], 4, [2, 1], _6482), reservation_request(2, [1, 4], [1200, _6566, 1], 3, [1, 1], _6544)]```
@@ -212,7 +210,7 @@ Some examples of the performed tests through the interpreter are given below.
          - Backtracking is again possible to see less viable options, looks great!
 
    - ```reservations_on_day```
-      
+     
       - Tests if the list of reservations on a specific day can indeed be linked to the list of reservations.
       - Test query: ```reservations_on_day([reservation(0, [1, 4], [1200, 1320, 1], 2, [1, 2], [1, 0, 0]), reservation(1, [1, 4], [1200, 1260, 1], 4, [2, 1], [0, 0, 1]), reservation(2, [1, 4], [1200, 1320, 1], 3, [1, 1], [0, 1, 0])], ReservationsOnDay, [2, 4]) .```
          - Answer: ```ReservationsOnDay = []```
