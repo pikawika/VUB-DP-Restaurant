@@ -112,8 +112,8 @@ Known "bad" things about the code:
          - Maximise standard/theatre menu sale (if it would be more profitable)
          - Maximise preffered menu assignment as definitive menu
          - Maximise preffered time assignment as definitive time
-      --> The code for these would be pretty much analogue to the 3 made maximisations.
-            One nuance: the preffered assignment as definitive assignment would need to be integrated in the existing constraints as the "original" preffered menu/time is not saved.
+      --> The code for these would be pretty much analogue to the 3 made maximisations with one small nuance.
+            The preffered assignment as definitive assignment would need to be integrated in the existing constraints as the "original" preffered menu/time is not saved.
             However, I added these prematurely and they resulted in an even slower labeling procedure and added small to no value for the assignment since they're so analogue to the existing code.
             Because of this, I decided to leave this beheaviour as is.
 
