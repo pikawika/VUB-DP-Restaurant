@@ -35,8 +35,7 @@ Testing performed (see README) and general content of system:
          - use query: test_dcg_sample_XXX( Result ) . 
             --> with XXX in 1..8
          - use query: test_dcg_sample_extra_XXX( Result ) . 
-            --> with XXX in 1..3
-         - use query: test_dcg_sample_all() . 
+            --> with XXX in 1..3 
       - Automated DCG part testing
          - The DCG part can be tested in a more automated way by checking whether the following predicates return true
             - test_dcg_sample_XXX_passes() . with XXX in 1..8
@@ -53,6 +52,7 @@ Testing performed (see README) and general content of system:
          - Tests constraints for tables:
             - Amount of people must not exceed maximum capacity (9).
             - Reserved tables must be able to seat all people.
+            - Edge case: no tables are assigned since the reservation is rejected. 
       - constrain_reservation_request_double_booking
          - Tests constraints for double booking so that no table is booked twice during the same time.
    - CONVERSION SYSTEM:
@@ -90,14 +90,14 @@ Testing performed (see README) and general content of system:
 
 
 
-Some things were assumed:
-   - Since the text messages are said to be processed no operations such as downcase_atom (lowercase transformation) are done.
-   - Since we could make the NLP portion endlessly big, it is made so that only the examples and very minor extra's are accepted.
-      - This means some assumptions, such as the time_description requiring "at" to be present, are made. These are obvious where the descriptions are formulated.
+Some assumptions and general remarks:
+   - Since the text messages are said to be processed no "fool proof" operations such as downcase_atom (lowercase transformation) are done.
+   - Since we could make the NLP portion endlessly big, it is "only" ensured the structures as the examples and some extra's are accepted.
+      - This means some assumptions, such as the time_description requiring "at" to be present, are made. These are obvious and mentioned where the descriptions are formulated.
    - Since I'm no expert in linguistics the naming for different parts of sentences might be odd.
       - It is also possible to make weird sentences such as "book I can a table for 2" since both "book" and "can" are seen as a verb.
-   - No constraint needed for "Booking takes place at least a day before" (confirmed by Homer).
-   - From the following sentence of the provided SMS inbox: "preferably for the standard menu at 7 o'clock"
+   - No constraint is needed for checking "Booking takes place at least a day before" (confirmed by Homer).
+   - Remarks on the following sentence of the provided SMS inbox: "preferably for the standard menu at 7 o'clock"
       - 7 o'clock is 7 pm since the restaurant is not open in the morning.
       - "preferable" is concerning the standard menu, not the time since it is situated before the menu. Thus menu also has the option to be "preferred".
 
@@ -105,6 +105,8 @@ Some things were assumed:
 
 Known "bad" things about the code:
    - The constraint system DOES WORK with "preference" information but behaves identically for a preferred menu/time and a menu/time that is not specified.
+      - If the restaurant would wish to take the preference into account it quite simply could add a reified constraint to get a truth value on weither the preference is fulfilled
+      and take that variable into consideration for labeling, however this would even further slow down the code as mentioned below.
    - The system uses three variables for minimisation, this causes the conversion from SMS messages to the final result to take +- 25 minutes for the provided SMS set.
       - Using the extra SMS inboxes, this process is a manner of seconds.
       - Using the minimizer_faster (enabled by default in clp_labeling), which only looks at maximizing the amount of people seated, the process takes about a minute.
