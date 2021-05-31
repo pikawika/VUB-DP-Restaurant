@@ -104,18 +104,24 @@ Some assumptions and general remarks:
 
 
 Known "bad" things about the code:
-   - The constraint system DOES WORK with "preference" information but behaves identically for a preferred menu/time and a menu/time that is not specified.
-      - If the restaurant would wish to take the preference into account it quite simply could add a reified constraint to get a truth value on weither the preference is fulfilled
-      and take that variable into consideration for labeling, however this would even further slow down the code as mentioned below.
    - The system uses three variables for minimisation, this causes the conversion from SMS messages to the final result to take +- 25 minutes for the provided SMS set.
       - Using the extra SMS inboxes, this process is a manner of seconds.
       - Using the minimizer_faster (enabled by default in clp_labeling), which only looks at maximizing the amount of people seated, the process takes about a minute.
+   - The constraint system works with a preffered menu/time by treating it equal to if the menu/time were not not specified.
+      - Depending on the restaurant's need, some maximisation could be added to either:
+         - Maximise standard/theatre menu sale (if it would be more profitable)
+         - Maximise preffered menu assignment as definitive menu
+         - Maximise preffered time assignment as definitive time
+      --> The code for these would be pretty much analogue to the 3 made maximisations.
+            One nuance: the preffered assignment as definitive assignment would need to be integrated in the existing constraints as the "original" preffered menu/time is not saved.
+            However, I added these prematurely and they resulted in an even slower labeling procedure and added small to no value for the assignment since they're so analogue to the existing code.
+            Because of this, I decided to leave this beheaviour as is.
 
 
 
 During the WPO it was asked if a TypeScript is needed, which the answer was "no, as long as you have clear examples and their output".
-         --> These are the examples and output that are available in the README.md, a copy of which is at the bottom of this file
-         --> The output for the given SMS inbox converted to reservations is also provided at the bottom as a copy-paste from the terminal
+         --> These are the examples and output that are available in the README.md, a copy of which is at the bottom of this file.
+         --> The output for the given SMS inbox converted to reservations is also provided at the bottom as a copy-paste from the terminal.
 
 
 
