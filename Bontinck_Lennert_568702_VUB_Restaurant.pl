@@ -103,7 +103,7 @@ Some assumptions and general remarks:
 
 
 
-Known "bad" things about the code:
+Some minor remarks on the performance of the code:
    - The system uses three variables for minimisation, this causes the conversion from SMS messages to the final result to take +- 25 minutes for the provided SMS set.
       - Using the extra SMS inboxes, this process is a manner of seconds.
       - Using the minimizer_faster (enabled by default in clp_labeling), which only looks at maximizing the amount of people seated, the process takes about a minute.
@@ -180,7 +180,7 @@ This section will provide some global predicates to ensure uniformity and ease o
 is_menu(1, standard, 120) .
 is_menu(2, theatre, 60) .
 
-/* Succeeds when the parameter is the maximum integer representation a menu */
+/* Succeeds when the parameter is the maximum integer representation of a menu */
 is_max_menu(2) .
 
 
@@ -190,12 +190,12 @@ is_preference(1, fixed) .
 is_preference(2, preferred) .
 is_preference(3, unspecified) .
 
-/* Succeeds when the parameter is the maximum integer representation a preference */
+/* Succeeds when the parameter is the maximum integer representation of a preference */
 is_max_preference(3) .
 
 
 
-/* Succeeds when first parameter (MinuteSinceMidnight) is equal to the passed minutes since midnight for the given second parameter ([Hour, Minute]) */
+/* Succeeds when first parameter (MinuteSinceMidnight) is equal to the passed minutes since midnight (00:00) for the given second parameter ([Hour, Minute]) */
 minutes_since_midnight(MinuteSinceMidnight, [Hour, Minute]) :-
 	MinuteSinceMidnight #= Hour*60 + Minute,
 	Hour in 0..23,
@@ -204,7 +204,7 @@ minutes_since_midnight(MinuteSinceMidnight, [Hour, Minute]) :-
 
 
 
-/* Succeeds when the first parameter is equal to the passed minutes since midnight for opening times  */
+/* Succeeds when the first parameter is equal to the passed minutes since midnight for the opening times  */
 is_opening_time(Time) :- minutes_since_midnight(Time, [19, 00]) .
 is_closing_time(Time) :- minutes_since_midnight(Time, [23, 00]) .
 
@@ -277,7 +277,7 @@ is_extra_processed_sms_inbox2( [[table,for,2,at,21,':',00,on,the,first,of,decemb
 This section will provide the Definite Clause Grammars (DCGs).
 DCGs are a facility in Prolog which makes it easy to define languages according to grammar rules.
 
-In our system the accepted language consists of a few major parts which can be in different orders:
+In our system the accepted language consists of a few major parts which can be in different orders or even optional:
    - introduction description: introductory part of the sentence. (e.g. "we would like to order a table")
    - amount_description: part of the sentence that specifies the number of people. (e.g. "for 2 people")
    - time_description: part of the sentence that specifies the time of the reservation, can be non-specified. (e.g. "at 8 pm")
@@ -509,7 +509,7 @@ month(Month) --> [StringMonth], { StringMonth = december, Month = 12} .
 
 This subsection takes care of the time_description recognition.
 It should detect StarTime in minutes since midnight and the preference being "fixed", "preferred" or "unspecified" represented as an integer.
-For this to work a time description should start with "at" or "<preference word> at" followed by a different array of time formats supported.
+For this to work a time description should start with "<optional preference word> at" followed by a different array of time formats supported.
 NOTE: since we're defining a grammar, a correct hour does not have to take into account the opening hours of the restaurant.
 */
 
@@ -616,8 +616,7 @@ no_menu_description([_Menu, Preference]) --> [], {is_preference(Preference, unsp
 
 /* Succeeds when the parameter (Menu) is equal to the textual representation of an allowed menu.
 	This abstraction makes it easier to add more menus down the line and ensures no "junk" is entered. */
-menu(Menu) --> [RawMenu], {RawMenu = theatre, is_menu(Menu, RawMenu, _)} .
-menu(Menu) --> [RawMenu], {RawMenu = standard, is_menu(Menu, RawMenu, _) } .
+menu(Menu) --> [RawMenu], {is_menu(Menu, RawMenu, _)} .
 
 
 
@@ -735,7 +734,7 @@ humans --> [of, us] .
 
 This section will provide some predicates for easy testing of the NLP (DCG) system.
 test_dcg_sample_XXX are created for manual validation.
-test_dcg_sample_1_passes() and test_dcg_sample_all()  are created for "automated" validation.
+test_dcg_sample_1_passes() and test_dcg_sample_all() are created for "automated" validation.
 */
 
 test_dcg_sample_1(Result) :- is_processed_sms_inbox(List), nth1(1,List,Sample), reservation_request( Result, Sample, []) .
@@ -816,14 +815,14 @@ The following concepts are constraint:
       - Menu must be singular allowed menu.
    - constrain_reservation_request_time
       - Time must be:
-	     - During opening hours.
-		 - Rounded to specified rounding.
-		 - Long enough for chosen menu.
+	      - During opening hours.
+	      - Rounded to specified rounding.
+	      - Long enough for chosen menu.
    - constrain_reservation_request_table
       - Puts constrains on tables (and amount) in general:
-	     - Amount of people must not exceed maximum capacity (9).
-		 - Reserved tables must be able to seat all people.
-         - Edge case: no tables are assigned since the reservation is rejected.
+	      - Amount of people must not exceed maximum capacity (9).
+	      - Reserved tables must be able to seat all people.
+	      - Edge case: no tables are assigned since the reservation is rejected.
    - constrain_reservation_request_double_booking
       - Constraints for double booking so that no table is booked twice during the same time.
 
@@ -835,7 +834,7 @@ The following concepts are constraint:
 ----------------------------------------------
 
 This subsection is responsible for constraining the menu variables of a reservation.
-Remember that the restaurant has 2 menu's currently, standard and theatre, both represented as integers.
+Remember that the restaurant has 2 menu's at the moment: standard and theatre, both represented as integers.
 */
 
 /* Constraints for menu:
@@ -929,7 +928,7 @@ constrain_reservation_request_time([reservation_request(Id, Date, [StartTime, En
 
 This subsection is responsible for constraining the table variables of a reservation.
 Remember that there are three tables with different capacities.
-Remember, the internal representation of a table variable is a list: [TableFor2, TableFor3, TableFor4], all boolean integers
+Remember, the internal representation of a table variable is a list: [TableFor2, TableFor3, TableFor4], all boolean integers.
 */
 
 /* Constraints for reservation tables:
@@ -1061,7 +1060,7 @@ nlp_to_clp_iter( Id, [[[Day, Month], [StartTime, TimePreference], Amount, [Menu,
 ----------------------------------------------
 */
 
-/* Converts reservation requests to reservation by changing leading term.
+/* Links reservation requests to reservation by changing leading term.
 	NOTE: this is nothing more then a representation change and does not perform an actual "action". */
 reservationrequests_to_reservation([], []) .
 
@@ -1243,10 +1242,10 @@ sort_reservations(RawReservations, SortedReservations) :-
 	perm( RawReservations, SortedReservations ).
 
 
+
+/* Modified British Museum sort code from lectures.  */ 
 ordering_of_reservations( [] ).
-
 ordering_of_reservations( [_] ).
-
 ordering_of_reservations( [reservation(_Id, [Day1, Month1],  [StartTime1, EndTime1, _TimePreference], _Amount, _Menu, _Tables), reservation(_, [Day2, Month2],  [StartTime2, EndTime2, _], _, _, _) | OtherReservations] ) :-
 	Month1 #=< Month2,
 	Day1 #=< Day2,
@@ -1254,18 +1253,12 @@ ordering_of_reservations( [reservation(_Id, [Day1, Month1],  [StartTime1, EndTim
 	EndTime1 #=< EndTime2,
 	when( nonvar( OtherReservations ), ordering_of_reservations( [ reservation(_, [Day2, Month2],  [StartTime2, EndTime2, _], _, _, _) | OtherReservations ] )).
 
-
-
 perm( [], [] ).
-
 perm( [X|Y], [U|V] ) :-
 	del( U, [X|Y], W ),
 	perm( W, V ).
 
-
-
 del( X, [X|Y], Y ).
-
 del( X, [Y|U], [Y|V] ) :-
 	del( X, U, V ).
 
@@ -1291,6 +1284,7 @@ del( X, [Y|U], [Y|V] ) :-
 
 This subsection is responsible for a text based displaying system of reservations.
 Uses some fancy ASCII art work and formatting. :-)
+Example output in the form of a terminal copy-paste is available at the bottom of this file.
 */
 
 /* Prints the reservations for Restaurant XX of a specified date [Day, Month] in a textual manner.
@@ -1435,7 +1429,7 @@ test_textual_output_sample_8([Day, Month]) :- is_processed_sms_inbox( Sms ), nth
 #                    TERMINAL OUTPUT OF SYSTEM                   #
 ##################################################################
 
-This section will provide some copy pastes from the terminal as to not have to run the lengthy process.
+This section will provide some copy-pastes from the terminal as to not have to run the lengthy process.
 These are a straight copy, without modifications.
 */
 
@@ -1670,13 +1664,8 @@ true.
 Below a copy of the README from the GitHub Repo is provided.
 It includes a list of performed tests.
 It is best viewed in a markdown editor.
-*/
 
-
-
-
-/* 
-
+--------- README STARTS HERE ---------
 # Declarative Programming project @ VUB 2020-2021 
 
 ## Table of contents
@@ -1945,5 +1934,5 @@ Some examples of the performed tests through the interpreter are given below.
          - Prints the reservations from the provided SMS inbox filter to only have first (nth1 index 1) sample on the 18th of March.
          - Answer: At 20h0, 2 people will arrive. They will have the standard menu and sit at the table for two. They will leave at 22h0.
             - Order message: [table,for,2,at,20,:,0,on,18,march]
-
+--------- README ENDS HERE ---------
 */
